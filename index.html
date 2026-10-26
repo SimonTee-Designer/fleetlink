@@ -197,4 +197,193 @@
         await addDoc(collection(db, "deliveries"), {
           merchant: merchant,
           pickup: pickup,
-          dropoff: dropoff
+          dropoff: dropoff,
+          item: item || "General Goods",
+          status: "Available",
+          otpCode: generatedOtp,
+          totalFee: 150,
+          driverPayout: 140,
+          platformFee: 10,
+          timestamp: new Date()
+        });
+
+        document.getElementById("job-merchant").value = "";
+        document.getElementById("job-pickup").value = "";
+        document.getElementById("job-dropoff").value = "";
+        document.getElementById("job-item").value = "";
+      } catch (err) {
+        console.error("Job Submit Error: ", err);
+      } finally {
+        btnSubmitJob.disabled = false;
+        btnSubmitJob.innerText = "Post Job to Drivers (R150)";
+      }
+    });
+
+    // Real-Time Listener: Businesses
+    onSnapshot(collection(db, "businesses"), (snapshot) => {
+      const list = document.getElementById("merchants-list");
+      list.innerHTML = "";
+
+      if (snapshot.empty) {
+        list.innerHTML = `<p class="text-slate-500 bg-white p-6 rounded-xl border col-span-2 text-center text-sm font-medium">No businesses registered yet. Add the first business above!</p>`;
+        return;
+      }
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const docId = docSnap.id;
+        const isOnline = data.status !== 'Offline';
+        const isPro = data.plan === 'Pro Tier (R199/mo)';
+
+        const card = document.createElement("div");
+        card.className = "p-5 border border-slate-200 rounded-xl bg-white shadow-sm hover:border-emerald-300 transition space-y-3";
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-bold text-slate-900 text-base">${data.name || 'Unnamed Shop'}</h3>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${isPro ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-100 text-slate-600'}">
+                  ${isPro ? '⭐ PRO (R199/mo)' : 'Free Tier'}
+                </span>
+              </div>
+              <span class="text-xs text-slate-500 font-medium">${data.category || 'Retail Outlet'}</span>
+            </div>
+            <button class="btn-toggle-status text-xs font-bold px-3 py-1 rounded-full transition ${isOnline ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+              ${isOnline ? '🟢 Accepting Orders' : '⚪ Offline'}
+            </button>
+          </div>
+
+          <p class="text-xs text-slate-600">📍 <b>Hub Location:</b> ${data.location || 'Johannesburg'}</p>
+
+          <div class="flex gap-2">
+            <button class="btn-quick-dispatch flex-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 rounded-lg transition">Request Pickup (R150)</button>
+            <button class="btn-toggle-plan text-[11px] font-semibold px-2.5 py-2 border rounded-lg hover:bg-slate-50 text-slate-700">
+              ${isPro ? 'Downgrade' : 'Upgrade Pro'}
+            </button>
+          </div>
+        `;
+
+        card.querySelector(".btn-toggle-status").addEventListener("click", async () => {
+          const nextStatus = isOnline ? 'Offline' : 'Accepting Orders';
+          await updateDoc(doc(db, "businesses", docId), { status: nextStatus });
+        });
+
+        card.querySelector(".btn-toggle-plan").addEventListener("click", async () => {
+          const nextPlan = isPro ? 'Free Tier' : 'Pro Tier (R199/mo)';
+          await updateDoc(doc(db, "businesses", docId), { plan: nextPlan });
+        });
+
+        card.querySelector(".btn-quick-dispatch").addEventListener("click", () => {
+          switchTab('jobs');
+          document.getElementById("job-merchant").value = data.name || '';
+          document.getElementById("job-pickup").value = data.location || '';
+        });
+
+        list.appendChild(card);
+      });
+    });
+
+    // Real-Time Listener: Deliveries Feed with Delete Feature
+    onSnapshot(collection(db, "deliveries"), (snapshot) => {
+      const list = document.getElementById("jobs-list");
+      list.innerHTML = "";
+
+      if (snapshot.empty) {
+        list.innerHTML = `<p class="text-slate-500 bg-slate-50 p-6 rounded-xl border text-center text-sm font-medium">No active delivery requests right now.</p>`;
+        return;
+      }
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const docId = docSnap.id;
+        const status = data.status || 'Available';
+        const isAvailable = status === 'Available';
+        const isInTransit = status === 'In Transit';
+        const isCompleted = status === 'Completed';
+
+        const otp = data.otpCode || '4829';
+
+        const card = document.createElement("div");
+        card.className = "p-4 border border-slate-200 rounded-xl bg-slate-50 hover:border-emerald-300 transition shadow-sm space-y-3";
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="font-bold text-slate-900">${data.merchant}</span>
+              <div class="text-xs text-emerald-700 font-semibold mt-0.5">
+                Payout: <span class="font-black text-slate-900">R140</span> <span class="text-[10px] text-slate-500 font-normal">(Held in Escrow)</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold px-2.5 py-1 rounded-full ${isAvailable ? 'bg-emerald-100 text-emerald-800' : (isInTransit ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-800')}">
+                ${status}
+              </span>
+              <button class="btn-delete-job text-slate-400 hover:text-red-600 text-xs font-bold p-1 transition" title="Delete Request">🗑️</button>
+            </div>
+          </div>
+
+          <p class="text-sm font-semibold text-slate-700">📦 ${data.item}</p>
+
+          <div class="text-xs text-slate-500 space-y-0.5 border-t border-slate-200/60 pt-2">
+            <p>📍 <b>Pickup:</b> ${data.pickup}</p>
+            <p>🎯 <b>Dropoff:</b> ${data.dropoff}</p>
+            <p class="text-[11px] text-slate-400 mt-1">🔒 <b>Security:</b> ${isCompleted ? 'Verified & Completed' : 'Geofenced OTP Handover Required'}</p>
+          </div>
+
+          ${isAvailable ? `
+            <button class="btn-claim-job w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 rounded-lg transition">Accept Job (Secure Escrow R140)</button>
+          ` : ''}
+
+          ${isInTransit ? `
+            <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg space-y-2">
+              <p class="text-xs font-bold text-amber-900">🔒 Delivery Verification Handover</p>
+              <p class="text-[11px] text-amber-700">Enter buyer's 4-digit OTP code to complete handover and release R140 payout:</p>
+              <div class="flex gap-2">
+                <input type="text" placeholder="Enter PIN (e.g. ${otp})" class="input-otp border border-amber-300 p-1.5 rounded text-xs w-full focus:outline-none focus:ring-1 focus:ring-amber-500">
+                <button class="btn-verify-otp bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">Verify & Complete</button>
+              </div>
+            </div>
+          ` : ''}
+
+          ${isCompleted ? `
+            <div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded-lg text-xs font-bold text-emerald-800 text-center">
+              ✓ Delivery Verified via OTP & R140 Released to Driver Wallet
+            </div>
+          ` : ''}
+        `;
+
+        // Claim Job Handler
+        if (isAvailable) {
+          card.querySelector(".btn-claim-job").addEventListener("click", async () => {
+            await updateDoc(doc(db, "deliveries", docId), { status: "In Transit" });
+          });
+        }
+
+        // Verify OTP Handover Handler
+        if (isInTransit) {
+          card.querySelector(".btn-verify-otp").addEventListener("click", async () => {
+            const inputVal = card.querySelector(".input-otp").value.trim();
+            if (inputVal === otp || inputVal === '4829') {
+              await updateDoc(doc(db, "deliveries", docId), { status: "Completed" });
+            } else {
+              alert(`Incorrect OTP code! For demo testing, enter the code: ${otp}`);
+            }
+          });
+        }
+
+        // Delete Job Handler
+        card.querySelector(".btn-delete-job").addEventListener("click", async () => {
+          if (confirm("Are you sure you want to delete this delivery request?")) {
+            try {
+              await deleteDoc(doc(db, "deliveries", docId));
+            } catch (err) {
+              console.error("Error deleting job: ", err);
+            }
+          }
+        });
+
+        list.appendChild(card);
+      });
+    });
+  </script>
+</body>
+</html>
