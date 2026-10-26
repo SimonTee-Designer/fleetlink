@@ -9,7 +9,7 @@
 <body class="bg-slate-100 font-sans p-4 md:p-8 min-h-screen">
   <div class="max-w-4xl mx-auto space-y-6">
 
-    <!-- Header & Platform Navigation -->
+    <!-- Header & Navigation -->
     <div class="bg-emerald-700 text-white p-6 rounded-2xl shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div>
         <h1 class="text-3xl font-black tracking-tight">FleetLink</h1>
@@ -21,13 +21,31 @@
       </div>
     </div>
 
-    <!-- VIEW 1: Available Businesses Directory -->
+    <!-- Pricing Model Banner -->
+    <div class="bg-slate-900 text-white p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
+      <div class="flex items-center gap-3">
+        <span class="bg-emerald-500 text-slate-950 font-black px-2.5 py-1 rounded-md text-sm">FLAT RATE</span>
+        <div>
+          <p class="font-bold text-slate-100">Standard Delivery Fee: R150 / order</p>
+          <p class="text-slate-400">R120 (80%) Driver Payout &bull; R30 (20%) Platform Fee</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 border-t md:border-t-0 md:border-l border-slate-700 pt-2 md:pt-0 md:pl-4">
+        <span class="bg-amber-400 text-slate-950 font-black px-2 py-0.5 rounded text-[10px]">PRO TIER</span>
+        <span class="text-slate-300">R199/month Priority Driver Matching</span>
+      </div>
+    </div>
+
+    <!-- VIEW 1: Business Directory -->
     <div id="view-merchants" class="space-y-6">
       
       <!-- Register Business Form -->
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <h2 class="font-bold text-lg text-slate-900 mb-1">Register Local Business Availability</h2>
-        <p class="text-slate-500 text-xs mb-4">List your store so drivers can find and service your regular deliveries.</p>
+        <div class="flex justify-between items-center mb-1">
+          <h2 class="font-bold text-lg text-slate-900">Register Local Business Availability</h2>
+          <span class="text-xs bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-md">Free Listing Tier (R0/mo)</span>
+        </div>
+        <p class="text-slate-500 text-xs mb-4">List your store so drivers can find and service your regular deliveries on-demand.</p>
         <form id="form-register-biz" onsubmit="return false;">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
             <input id="biz-name" type="text" placeholder="Business Name (e.g. Cosmo Bakery)" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
@@ -51,9 +69,12 @@
     <!-- VIEW 2: Live Deliveries Feed -->
     <div id="view-jobs" class="space-y-6 hidden">
       
-      <!-- Create Delivery Job -->
+      <!-- Dispatch Job -->
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <h2 class="font-bold text-lg text-slate-900 mb-3">Dispatch Delivery Order</h2>
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="font-bold text-lg text-slate-900">Dispatch Delivery Order</h2>
+          <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-md">Cost: R150 per delivery</span>
+        </div>
         <form id="form-create-job" onsubmit="return false;">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <input id="job-merchant" type="text" placeholder="Merchant Name" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
@@ -61,7 +82,7 @@
             <input id="job-pickup" type="text" placeholder="Pickup Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
             <input id="job-dropoff" type="text" placeholder="Dropoff Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
           </div>
-          <button id="btn-submit-job" type="button" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow transition text-sm">Post Job to Drivers</button>
+          <button id="btn-submit-job" type="button" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow transition text-sm">Post Job to Drivers (R150)</button>
         </form>
       </div>
 
@@ -95,7 +116,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Tab Navigation Setup
+    // Tab Switcher
     const tabMerchants = document.getElementById("tab-merchants");
     const tabJobs = document.getElementById("tab-jobs");
     const viewMerchants = document.getElementById("view-merchants");
@@ -139,6 +160,7 @@
           category: category || "General Retail",
           location: location,
           status: "Accepting Orders",
+          plan: "Free Tier",
           timestamp: new Date()
         });
 
@@ -146,8 +168,7 @@
         document.getElementById("biz-category").value = "";
         document.getElementById("biz-location").value = "";
       } catch (err) {
-        console.error("Firestore Save Error: ", err);
-        alert("Could not save to database. Check Firestore Rules in Firebase Console.");
+        console.error("Firestore Error: ", err);
       } finally {
         btnSubmitBiz.disabled = false;
         btnSubmitBiz.innerText = "Register Business";
@@ -177,6 +198,9 @@
           dropoff: dropoff,
           item: item || "General Goods",
           status: "Available",
+          totalFee: 150,
+          driverPayout: 120,
+          platformFee: 30,
           timestamp: new Date()
         });
 
@@ -188,7 +212,7 @@
         console.error("Job Submit Error: ", err);
       } finally {
         btnSubmitJob.disabled = false;
-        btnSubmitJob.innerText = "Post Job to Drivers";
+        btnSubmitJob.innerText = "Post Job to Drivers (R150)";
       }
     });
 
@@ -206,27 +230,46 @@
         const data = docSnap.data();
         const docId = docSnap.id;
         const isOnline = data.status !== 'Offline';
+        const isPro = data.plan === 'Pro Tier (R199/mo)';
 
         const card = document.createElement("div");
-        card.className = "p-5 border border-slate-200 rounded-xl bg-white shadow-sm hover:border-emerald-300 transition";
+        card.className = "p-5 border border-slate-200 rounded-xl bg-white shadow-sm hover:border-emerald-300 transition space-y-3";
         card.innerHTML = `
-          <div class="flex justify-between items-start mb-2">
+          <div class="flex justify-between items-start">
             <div>
-              <h3 class="font-bold text-slate-900 text-base">${data.name || 'Unnamed Shop'}</h3>
+              <div class="flex items-center gap-2">
+                <h3 class="font-bold text-slate-900 text-base">${data.name || 'Unnamed Shop'}</h3>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${isPro ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-100 text-slate-600'}">
+                  ${isPro ? '⭐ PRO (R199/mo)' : 'Free Tier'}
+                </span>
+              </div>
               <span class="text-xs text-slate-500 font-medium">${data.category || 'Retail Outlet'}</span>
             </div>
             <button class="btn-toggle-status text-xs font-bold px-3 py-1 rounded-full transition ${isOnline ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
               ${isOnline ? '🟢 Accepting Orders' : '⚪ Offline'}
             </button>
           </div>
-          <p class="text-xs text-slate-600 mb-4">📍 <b>Hub Location:</b> ${data.location || 'Johannesburg'}</p>
-          <button class="btn-quick-dispatch w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 rounded-lg transition">Request Pickup from Business</button>
+
+          <p class="text-xs text-slate-600">📍 <b>Hub Location:</b> ${data.location || 'Johannesburg'}</p>
+
+          <div class="flex gap-2">
+            <button class="btn-quick-dispatch flex-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 rounded-lg transition">Request Pickup (R150)</button>
+            <button class="btn-toggle-plan text-[11px] font-semibold px-2.5 py-2 border rounded-lg hover:bg-slate-50 text-slate-700">
+              ${isPro ? 'Downgrade' : 'Upgrade Pro'}
+            </button>
+          </div>
         `;
 
         // Toggle Status Handler
         card.querySelector(".btn-toggle-status").addEventListener("click", async () => {
           const nextStatus = isOnline ? 'Offline' : 'Accepting Orders';
           await updateDoc(doc(db, "businesses", docId), { status: nextStatus });
+        });
+
+        // Upgrade/Downgrade Plan Handler
+        card.querySelector(".btn-toggle-plan").addEventListener("click", async () => {
+          const nextPlan = isPro ? 'Free Tier' : 'Pro Tier (R199/mo)';
+          await updateDoc(doc(db, "businesses", docId), { plan: nextPlan });
         });
 
         // Quick Dispatch Handler
@@ -257,23 +300,28 @@
         const isAvailable = status === 'Available';
 
         const card = document.createElement("div");
-        card.className = "p-4 border border-slate-200 rounded-xl bg-slate-50 hover:border-emerald-300 transition shadow-sm";
+        card.className = "p-4 border border-slate-200 rounded-xl bg-slate-50 hover:border-emerald-300 transition shadow-sm space-y-3";
         card.innerHTML = `
-          <div class="flex justify-between items-start mb-2">
+          <div class="flex justify-between items-start">
             <div>
               <span class="font-bold text-slate-900">${data.merchant}</span>
-              <span class="text-xs text-slate-500 block">Est. Payout: R150</span>
+              <div class="text-xs text-emerald-700 font-semibold mt-0.5">
+                Payout: <span class="font-black text-slate-900">R120</span> <span class="text-[10px] text-slate-500 font-normal">(R150 Total - R30 Platform Fee)</span>
+              </div>
             </div>
             <span class="text-xs font-bold px-2.5 py-1 rounded-full ${isAvailable ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
               ${status}
             </span>
           </div>
-          <p class="text-sm font-semibold text-slate-700 mb-2">📦 ${data.item}</p>
-          <div class="text-xs text-slate-500 space-y-0.5 border-t border-slate-200/60 pt-2 mb-3">
+
+          <p class="text-sm font-semibold text-slate-700">📦 ${data.item}</p>
+
+          <div class="text-xs text-slate-500 space-y-0.5 border-t border-slate-200/60 pt-2">
             <p>📍 <b>Pickup:</b> ${data.pickup}</p>
             <p>🎯 <b>Dropoff:</b> ${data.dropoff}</p>
           </div>
-          ${isAvailable ? `<button class="btn-claim-job w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 rounded-lg transition">Accept Delivery Job</button>` : ''}
+
+          ${isAvailable ? `<button class="btn-claim-job w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 rounded-lg transition">Accept Delivery Job (Earn R120)</button>` : ''}
         `;
 
         if (isAvailable) {
