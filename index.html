@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FleetLink - Micro-Logistics Marketplace</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Leaflet OpenStreetMap CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body class="bg-slate-100 font-sans p-4 md:p-8 min-h-screen">
   <div class="max-w-4xl mx-auto space-y-6">
@@ -17,8 +20,8 @@
       </div>
       <div class="bg-emerald-800/80 p-1 rounded-xl flex flex-wrap border border-emerald-600 text-xs font-bold gap-1">
         <button id="tab-merchants" onclick="window.switchTab('merchants')" class="px-3 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition">Businesses</button>
-        <button id="tab-jobs" onclick="window.switchTab('jobs')" class="px-3 py-2 rounded-lg text-emerald-100 hover:text-white transition">Live Jobs</button>
-        <button id="tab-drivers" onclick="window.switchTab('drivers')" class="px-3 py-2 rounded-lg text-emerald-100 hover:text-white transition">Driver KYC & Biometrics</button>
+        <button id="tab-jobs" onclick="window.switchTab('jobs')" class="px-3 py-2 rounded-lg text-emerald-100 hover:text-white transition">Live Jobs & Tracking</button>
+        <button id="tab-drivers" onclick="window.switchTab('drivers')" class="px-3 py-2 rounded-lg text-emerald-100 hover:text-white transition">Driver KYC</button>
       </div>
     </div>
 
@@ -32,8 +35,8 @@
         </div>
       </div>
       <div class="flex items-center gap-2 border-t md:border-t-0 md:border-l border-slate-700 pt-2 md:pt-0 md:pl-4">
-        <span class="bg-emerald-400 text-slate-950 font-black px-2 py-0.5 rounded text-[10px]">SECURE KYC</span>
-        <span class="text-slate-300">ID Verification &bull; Face Biometrics &bull; Escrow Protected</span>
+        <span class="bg-emerald-400 text-slate-950 font-black px-2 py-0.5 rounded text-[10px]">LIVE GPS</span>
+        <span class="text-slate-300">Real-Time Map &bull; OTP Handover &bull; Escrow Protected</span>
       </div>
     </div>
 
@@ -63,8 +66,19 @@
       </div>
     </div>
 
-    <!-- VIEW 2: Live Deliveries Feed -->
+    <!-- VIEW 2: Live Deliveries Feed & GPS Tracking -->
     <div id="view-jobs" class="space-y-6 hidden">
+      <!-- Live Map Section -->
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-2">
+        <div class="flex justify-between items-center">
+          <h2 class="font-bold text-base text-slate-900 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span> Live Delivery Tracking Map
+          </h2>
+          <span class="text-[11px] font-bold text-slate-500">Johannesburg & Township Hub</span>
+        </div>
+        <div id="map" class="w-full h-64 rounded-xl border border-slate-200 z-0"></div>
+      </div>
+
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div class="flex justify-between items-center mb-3">
           <h2 class="font-bold text-lg text-slate-900">Dispatch Delivery Order</h2>
@@ -145,6 +159,33 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    let map = null;
+    let driverMarker = null;
+
+    // Initialize Interactive Leaflet Map
+    function initMap() {
+      if (map) return;
+      // Default to Johannesburg Coordinates (-26.10, 27.98)
+      map = L.map('map').setView([-26.1025, 27.9785], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Add Merchant Pickup Marker
+      L.marker([-26.1025, 27.9785]).addTo(map).bindPopup("<b>Cosmo Bakery</b><br>Pickup Station").openPopup();
+      // Add Dropoff Marker
+      L.marker([-26.0950, 27.9950]).addTo(map).bindPopup("<b>Customer Dropoff</b><br>Cosmo City Ext 2");
+
+      // Add Simulated Moving Driver Marker
+      driverMarker = L.marker([-26.1010, 27.9820], {
+        icon: L.divIcon({
+          className: 'custom-icon',
+          html: '<div style="background-color:#059669; color:white; padding:4px 8px; border-radius:12px; font-weight:bold; font-size:10px; border:2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">🚚 Driver En-Route</div>',
+          iconSize: [100, 30]
+        })
+      }).addTo(map);
+    }
+
     // Global Tab Switcher Function
     window.switchTab = function(view) {
       const tabMerchants = document.getElementById("tab-merchants");
@@ -167,13 +208,16 @@
       } else if (view === 'jobs') {
         viewJobs.classList.remove("hidden");
         tabJobs.className = "px-3 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition";
+        setTimeout(() => {
+          initMap();
+          map.invalidateSize();
+        }, 200);
       } else if (view === 'drivers') {
         viewDrivers.classList.remove("hidden");
         tabDrivers.className = "px-3 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition";
       }
     };
 
-    // Helper to convert uploaded files to Base64 strings for preview & storage
     function fileToBase64(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -183,9 +227,8 @@
       });
     }
 
-    // Attach form submit listeners
     document.addEventListener("DOMContentLoaded", () => {
-      // Business Registration
+      // Business Form Submit
       const btnSubmitBiz = document.getElementById("btn-submit-biz");
       if (btnSubmitBiz) {
         btnSubmitBiz.addEventListener("click", async () => {
@@ -223,7 +266,7 @@
         });
       }
 
-      // Delivery Job Dispatch
+      // Job Submit
       const btnSubmitJob = document.getElementById("btn-submit-job");
       if (btnSubmitJob) {
         btnSubmitJob.addEventListener("click", async () => {
@@ -268,7 +311,7 @@
         });
       }
 
-      // Driver KYC & Biometrics Registration
+      // Driver KYC Submit
       const btnSubmitDriver = document.getElementById("btn-submit-driver");
       if (btnSubmitDriver) {
         btnSubmitDriver.addEventListener("click", async () => {
@@ -381,7 +424,7 @@
       });
     });
 
-    // Real-Time Listener: Drivers Network & Biometric KYC
+    // Real-Time Listener: Drivers Network
     onSnapshot(collection(db, "drivers"), (snapshot) => {
       const list = document.getElementById("drivers-list");
       if (!list) return;
@@ -501,7 +544,7 @@
 
           ${isInTransit ? `
             <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg space-y-2">
-              <p class="text-xs font-bold text-amber-900">🔒 Delivery Verification Handover</p>
+              <p class="text-xs font-bold text-amber-900">🔒 Delivery Verification Handover & GPS Live Stream</p>
               <p class="text-[11px] text-amber-700">Enter buyer's 4-digit OTP code to complete handover and release R140 payout:</p>
               <div class="flex gap-2">
                 <input type="text" placeholder="Enter PIN (e.g. ${otp})" class="input-otp border border-amber-300 p-1.5 rounded text-xs w-full focus:outline-none focus:ring-1 focus:ring-amber-500">
