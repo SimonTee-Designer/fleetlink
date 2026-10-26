@@ -6,38 +6,77 @@
   <title>FleetLink - Micro-Logistics Marketplace</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 font-sans p-4 md:p-8">
-  <div class="max-w-2xl mx-auto bg-white p-6 rounded-2xl shadow-lg">
-    <div class="border-b pb-4 mb-6">
-      <h1 class="text-3xl font-extrabold text-emerald-600">FleetLink</h1>
-      <p class="text-gray-500 font-medium">Connecting Local Sellers with Nearby Transport Operators</p>
-    </div>
+<body class="bg-slate-100 font-sans p-4 md:p-8 min-h-screen">
+  <div class="max-w-4xl mx-auto space-y-6">
 
-    <!-- Post Job Section -->
-    <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200 mb-8">
-      <h2 class="font-bold text-lg text-emerald-900 mb-3">Merchant: Post a Delivery Request</h2>
-      <div class="space-y-3">
-        <input id="merchant" type="text" placeholder="Merchant / Shop Name (e.g. Cosmo Bakery)" class="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
-        <input id="pickup" type="text" placeholder="Pickup Address" class="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
-        <input id="dropoff" type="text" placeholder="Dropoff Address" class="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
-        <input id="item" type="text" placeholder="Package Description (e.g. 10x Bread Crates)" class="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
-        <button onclick="submitRequest()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow-md transition">Post Delivery Job</button>
+    <!-- Header & Platform Navigation -->
+    <div class="bg-emerald-700 text-white p-6 rounded-2xl shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 class="text-3xl font-black tracking-tight">FleetLink</h1>
+        <p class="text-emerald-100 text-sm font-medium">B2B Merchant Availability & Micro-Logistics Network</p>
+      </div>
+      <div class="bg-emerald-800/80 p-1 rounded-xl flex border border-emerald-600 text-xs font-bold">
+        <button id="tab-merchants" onclick="switchView('merchants')" class="px-4 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition">Business Directory</button>
+        <button id="tab-jobs" onclick="switchView('jobs')" class="px-4 py-2 rounded-lg text-emerald-100 hover:text-white transition">Live Job Feed</button>
       </div>
     </div>
 
-    <!-- Live Deliveries List -->
-    <div>
-      <h2 class="font-bold text-xl text-gray-800 mb-4">Driver Feed: Available Deliveries</h2>
-      <div id="jobs-list" class="space-y-3">
-        <p class="text-gray-400 italic text-sm">Loading live database deliveries...</p>
+    <!-- VIEW 1: Available Businesses Directory -->
+    <div id="view-merchants" class="space-y-6">
+      
+      <!-- Register Business Form -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="font-bold text-lg text-slate-900 mb-1">Register Local Business Availability</h2>
+        <p class="text-slate-500 text-xs mb-4">List your store so drivers can find and service your regular deliveries.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+          <input id="biz-name" type="text" placeholder="Business Name (e.g. Cosmo Bakery)" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          <input id="biz-category" type="text" placeholder="Category (e.g. Retail, Grocery)" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          <input id="biz-location" type="text" placeholder="Location / Hub Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+        <button onclick="registerBusiness()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow transition text-sm">Register Business</button>
       </div>
+
+      <!-- Business Directory Cards -->
+      <div>
+        <h2 class="font-bold text-xl text-slate-800 mb-4">Available Partner Businesses</h2>
+        <div id="merchants-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <p class="text-slate-400 italic text-sm py-4 col-span-2 text-center">Loading network businesses...</p>
+        </div>
+      </div>
+
     </div>
+
+    <!-- VIEW 2: Live Deliveries Feed -->
+    <div id="view-jobs" class="space-y-6 hidden">
+      
+      <!-- Create Delivery Job -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="font-bold text-lg text-slate-900 mb-3">Dispatch Delivery Order</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <input id="job-merchant" type="text" placeholder="Merchant Name" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          <input id="job-item" type="text" placeholder="Package Description" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          <input id="job-pickup" type="text" placeholder="Pickup Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          <input id="job-dropoff" type="text" placeholder="Dropoff Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+        <button onclick="submitJob()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow transition text-sm">Post Job to Drivers</button>
+      </div>
+
+      <!-- Active Delivery List -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="font-bold text-xl text-slate-800 mb-4">Available Delivery Requests</h2>
+        <div id="jobs-list" class="space-y-3">
+          <p class="text-slate-400 italic text-sm text-center py-4">Loading real-time jobs...</p>
+        </div>
+      </div>
+
+    </div>
+
   </div>
 
   <!-- Firebase Web SDK Modular CDN -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AiZaSyBqKLr7NLE-LbEj1585pylXFDQ68Apkzt8",
@@ -52,58 +91,20 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    onSnapshot(collection(db, "deliveries"), (snapshot) => {
-      const list = document.getElementById("jobs-list");
+    // Listen to Businesses Collection
+    onSnapshot(collection(db, "businesses"), (snapshot) => {
+      const list = document.getElementById("merchants-list");
       list.innerHTML = "";
-      
+
       if (snapshot.empty) {
-        list.innerHTML = `<p class="text-gray-500 bg-gray-50 p-4 rounded-lg border text-center">No active delivery requests. Post one above!</p>`;
+        list.innerHTML = `<p class="text-slate-500 bg-white p-6 rounded-xl border col-span-2 text-center text-sm font-medium">No businesses registered yet. Add the first business above!</p>`;
         return;
       }
 
-      snapshot.forEach(doc => {
-        const data = doc.data();
+      snapshot.forEach(documentItem => {
+        const data = documentItem.data();
+        const docId = documentItem.id;
+        const isOnline = data.status !== 'Offline';
+
         list.innerHTML += `
-          <div class="p-4 border border-gray-200 rounded-xl bg-gray-50 hover:bg-gray-100 transition shadow-sm">
-            <div class="flex justify-between items-start mb-2">
-              <span class="font-bold text-gray-900">${data.merchant || 'Local Merchant'}</span>
-              <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full">Available</span>
-            </div>
-            <p class="text-sm font-semibold text-gray-700">📦 ${data.item || 'General Cargo'}</p>
-            <p class="text-xs text-gray-500 mt-1">📍 <b>From:</b> ${data.pickup} &nbsp;|&nbsp; 🎯 <b>To:</b> ${data.dropoff}</p>
-          </div>`;
-      });
-    });
-
-    window.submitRequest = async function() {
-      const merchant = document.getElementById("merchant").value;
-      const pickup = document.getElementById("pickup").value;
-      const dropoff = document.getElementById("dropoff").value;
-      const item = document.getElementById("item").value;
-
-      if (!pickup || !dropoff) {
-        alert("Please provide both pickup and dropoff locations.");
-        return;
-      }
-
-      try {
-        await addDoc(collection(db, "deliveries"), {
-          merchant: merchant || "Local Seller",
-          pickup: pickup,
-          dropoff: dropoff,
-          item: item || "Standard Delivery",
-          timestamp: new Date()
-        });
-
-        document.getElementById("merchant").value = "";
-        document.getElementById("pickup").value = "";
-        document.getElementById("dropoff").value = "";
-        document.getElementById("item").value = "";
-      } catch (error) {
-        console.error("Error adding document: ", error);
-        alert("Make sure your Firestore Database is created in Test Mode!");
-      }
-    };
-  </script>
-</body>
-</html>
+          <div class="p-5 border border-slate-200 rounded-xl bg-white shadow-sm hover:border-emerald
