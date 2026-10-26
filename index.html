@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FleetLink - Micro-Logistics Marketplace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans p-4 md:p-8">
+  <div class="max-w-2xl mx-auto bg-white p-6 rounded-2xl shadow-lg">
+    <div class="border-b pb-4 mb-6">
+      <h1 class="text-3xl font-extrabold text-emerald-600">FleetLink</h1>
+      <p class="text-gray-500 font-medium">Connecting Local Sellers with Nearby Transport Operators</p>
+    </div>
+
+    <!-- Post Job Section -->
+    <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200 mb-8">
+      <h2 class="font-bold text-lg text-emerald-900 mb-3">Merchant: Post a Delivery Request</h2>
+      <div class="space-y-3">
+        <input id="merchant" type="text" placeholder="Merchant / Shop Name (e.g. Cosmo Bakery)" class="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        <input id="pickup" type="text" placeholder="Pickup Address" class="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        <input id="dropoff" type="text" placeholder="Dropoff Address" class="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        <input id="item" type="text" placeholder="Package Description (e.g. 10x Bread Crates)" class="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        <button onclick="submitRequest()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow-md transition">Post Delivery Job</button>
+      </div>
+    </div>
+
+    <!-- Live Deliveries List -->
+    <div>
+      <h2 class="font-bold text-xl text-gray-800 mb-4">Driver Feed: Available Deliveries</h2>
+      <div id="jobs-list" class="space-y-3">
+        <p class="text-gray-400 italic text-sm">Loading live database deliveries...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Web SDK Modular CDN -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AiZaSyBqKLr7NLE-LbEj1585pylXFDQ68Apkzt8",
+      authDomain: "fleetlink-72aca.firebaseapp.com",
+      projectId: "fleetlink-72aca",
+      storageBucket: "fleetlink-72aca.firebasestorage.app",
+      messagingSenderId: "916900465251",
+      appId: "1:916900465251:web:ada068c18acd2e7bf54656",
+      measurementId: "G-6Q45BSQPXF"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    onSnapshot(collection(db, "deliveries"), (snapshot) => {
+      const list = document.getElementById("jobs-list");
+      list.innerHTML = "";
+      
+      if (snapshot.empty) {
+        list.innerHTML = `<p class="text-gray-500 bg-gray-50 p-4 rounded-lg border text-center">No active delivery requests. Post one above!</p>`;
+        return;
+      }
+
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        list.innerHTML += `
+          <div class="p-4 border border-gray-200 rounded-xl bg-gray-50 hover:bg-gray-100 transition shadow-sm">
+            <div class="flex justify-between items-start mb-2">
+              <span class="font-bold text-gray-900">${data.merchant || 'Local Merchant'}</span>
+              <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full">Available</span>
+            </div>
+            <p class="text-sm font-semibold text-gray-700">📦 ${data.item || 'General Cargo'}</p>
+            <p class="text-xs text-gray-500 mt-1">📍 <b>From:</b> ${data.pickup} &nbsp;|&nbsp; 🎯 <b>To:</b> ${data.dropoff}</p>
+          </div>`;
+      });
+    });
+
+    window.submitRequest = async function() {
+      const merchant = document.getElementById("merchant").value;
+      const pickup = document.getElementById("pickup").value;
+      const dropoff = document.getElementById("dropoff").value;
+      const item = document.getElementById("item").value;
+
+      if (!pickup || !dropoff) {
+        alert("Please provide both pickup and dropoff locations.");
+        return;
+      }
+
+      try {
+        await addDoc(collection(db, "deliveries"), {
+          merchant: merchant || "Local Seller",
+          pickup: pickup,
+          dropoff: dropoff,
+          item: item || "Standard Delivery",
+          timestamp: new Date()
+        });
+
+        document.getElementById("merchant").value = "";
+        document.getElementById("pickup").value = "";
+        document.getElementById("dropoff").value = "";
+        document.getElementById("item").value = "";
+      } catch (error) {
+        console.error("Error adding document: ", error);
+        alert("Make sure your Firestore Database is created in Test Mode!");
+      }
+    };
+  </script>
+</body>
+</html>
