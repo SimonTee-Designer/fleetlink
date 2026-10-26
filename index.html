@@ -28,15 +28,15 @@
     <!-- Pricing & Security Banner -->
     <div class="bg-slate-900 text-white p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
       <div class="flex items-center gap-3">
-        <span class="bg-emerald-500 text-slate-950 font-black px-2.5 py-1 rounded-md text-sm">FLAT RATE</span>
+        <span class="bg-emerald-500 text-slate-950 font-black px-2.5 py-1 rounded-md text-sm">TIERED FLEET</span>
         <div>
-          <p class="font-bold text-slate-100">Standard Delivery Fee: R150 / order</p>
-          <p class="text-slate-400">R140 Driver Payout &bull; R10 Platform Fee</p>
+          <p class="font-bold text-slate-100">Moto (R150) &bull; Bakkie (R350 Wholesale)</p>
+          <p class="text-slate-400">Escrow Protected &bull; Photo POD &bull; OTP Handover</p>
         </div>
       </div>
       <div class="flex items-center gap-2 border-t md:border-t-0 md:border-l border-slate-700 pt-2 md:pt-0 md:pl-4">
         <span class="bg-emerald-400 text-slate-950 font-black px-2 py-0.5 rounded text-[10px]">LIVE GPS</span>
-        <span class="text-slate-300">Real-Time Map &bull; OTP Handover &bull; Escrow Protected</span>
+        <span class="text-slate-300">OpenStreetMap Route Tracking Active</span>
       </div>
     </div>
 
@@ -79,10 +79,11 @@
         <div id="map" class="w-full h-64 rounded-xl border border-slate-200 z-0"></div>
       </div>
 
+      <!-- Dispatch Job with Vehicle Class Options -->
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div class="flex justify-between items-center mb-3">
           <h2 class="font-bold text-lg text-slate-900">Dispatch Delivery Order</h2>
-          <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-md">Cost: R150 per delivery</span>
+          <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-md">Tiered Vehicle Selection</span>
         </div>
         <form id="form-create-job" onsubmit="return false;">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
@@ -90,8 +91,16 @@
             <input id="job-item" type="text" placeholder="Package Description" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
             <input id="job-pickup" type="text" placeholder="Pickup Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
             <input id="job-dropoff" type="text" placeholder="Dropoff Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+            
+            <div class="sm:col-span-2">
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">🚚 Select Vehicle & Pricing Tier:</label>
+              <select id="job-vehicle-tier" class="border border-slate-300 p-2.5 rounded-lg text-sm w-full focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="moto">Motorcycle / Scooter &bull; R150 Total (R140 Driver Payout &bull; R10 Platform Fee)</option>
+                <option value="bakkie">Light Bakkie / Van (Wholesale) &bull; R350 Total (R320 Driver Payout &bull; R30 Platform Fee)</option>
+              </select>
+            </div>
           </div>
-          <button id="btn-submit-job" type="button" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow transition text-sm">Post Job to Drivers (R150)</button>
+          <button id="btn-submit-job" type="button" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow transition text-sm">Post Job to Driver Fleet</button>
         </form>
       </div>
 
@@ -162,21 +171,16 @@
     let map = null;
     let driverMarker = null;
 
-    // Initialize Interactive Leaflet Map
     function initMap() {
       if (map) return;
-      // Default to Johannesburg Coordinates (-26.10, 27.98)
       map = L.map('map').setView([-26.1025, 27.9785], 13);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
       }).addTo(map);
 
-      // Add Merchant Pickup Marker
       L.marker([-26.1025, 27.9785]).addTo(map).bindPopup("<b>Cosmo Bakery</b><br>Pickup Station").openPopup();
-      // Add Dropoff Marker
       L.marker([-26.0950, 27.9950]).addTo(map).bindPopup("<b>Customer Dropoff</b><br>Cosmo City Ext 2");
 
-      // Add Simulated Moving Driver Marker
       driverMarker = L.marker([-26.1010, 27.9820], {
         icon: L.divIcon({
           className: 'custom-icon',
@@ -186,7 +190,6 @@
       }).addTo(map);
     }
 
-    // Global Tab Switcher Function
     window.switchTab = function(view) {
       const tabMerchants = document.getElementById("tab-merchants");
       const tabJobs = document.getElementById("tab-jobs");
@@ -266,7 +269,7 @@
         });
       }
 
-      // Job Submit
+      // Job Submit with Tiered Vehicle Pricing
       const btnSubmitJob = document.getElementById("btn-submit-job");
       if (btnSubmitJob) {
         btnSubmitJob.addEventListener("click", async () => {
@@ -274,10 +277,23 @@
           const pickup = document.getElementById("job-pickup").value.trim();
           const dropoff = document.getElementById("job-dropoff").value.trim();
           const item = document.getElementById("job-item").value.trim();
+          const tier = document.getElementById("job-vehicle-tier").value;
 
           if (!merchant || !pickup || !dropoff) {
             alert("Please fill in merchant name, pickup, and dropoff fields.");
             return;
+          }
+
+          let totalFee = 150;
+          let driverPayout = 140;
+          let platformFee = 10;
+          let vehicleType = "Motorcycle / Scooter";
+
+          if (tier === 'bakkie') {
+            totalFee = 350;
+            driverPayout = 320;
+            platformFee = 30;
+            vehicleType = "Light Bakkie / Van (Wholesale)";
           }
 
           btnSubmitJob.disabled = true;
@@ -290,11 +306,12 @@
               pickup: pickup,
               dropoff: dropoff,
               item: item || "General Goods",
+              vehicleType: vehicleType,
               status: "Available",
               otpCode: generatedOtp,
-              totalFee: 150,
-              driverPayout: 140,
-              platformFee: 10,
+              totalFee: totalFee,
+              driverPayout: driverPayout,
+              platformFee: platformFee,
               timestamp: new Date()
             });
 
@@ -306,7 +323,7 @@
             console.error("Job Submit Error: ", err);
           } finally {
             btnSubmitJob.disabled = false;
-            btnSubmitJob.innerText = "Post Job to Drivers (R150)";
+            btnSubmitJob.innerText = "Post Job to Driver Fleet";
           }
         });
       }
@@ -397,7 +414,7 @@
           <p class="text-xs text-slate-600">📍 <b>Hub Location:</b> ${data.location || 'Johannesburg'}</p>
 
           <div class="flex gap-2">
-            <button class="btn-quick-dispatch flex-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 rounded-lg transition">Request Pickup (R150)</button>
+            <button class="btn-quick-dispatch flex-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 rounded-lg transition">Request Pickup</button>
             <button class="btn-toggle-plan text-[11px] font-semibold px-2.5 py-2 border rounded-lg hover:bg-slate-50 text-slate-700">
               ${isPro ? 'Downgrade' : 'Upgrade Pro'}
             </button>
@@ -492,7 +509,7 @@
       });
     });
 
-    // Real-Time Listener: Deliveries Feed
+    // Real-Time Listener: Deliveries Feed with Photo POD & OTP Handover
     onSnapshot(collection(db, "deliveries"), (snapshot) => {
       const list = document.getElementById("jobs-list");
       if (!list) return;
@@ -511,6 +528,8 @@
         const isInTransit = status === 'In Transit';
         const isCompleted = status === 'Completed';
         const otp = data.otpCode || '4829';
+        const vehicle = data.vehicleType || 'Motorcycle / Scooter';
+        const payout = data.driverPayout || 140;
 
         const card = document.createElement("div");
         card.className = "p-4 border border-slate-200 rounded-xl bg-slate-50 hover:border-emerald-300 transition shadow-sm space-y-3";
@@ -519,7 +538,7 @@
             <div>
               <span class="font-bold text-slate-900">${data.merchant}</span>
               <div class="text-xs text-emerald-700 font-semibold mt-0.5">
-                Payout: <span class="font-black text-slate-900">R140</span> <span class="text-[10px] text-slate-500 font-normal">(Held in Escrow)</span>
+                Payout: <span class="font-black text-slate-900">R${payout}</span> <span class="text-[10px] text-slate-500 font-normal">(${vehicle})</span>
               </div>
             </div>
             <div class="flex items-center gap-2">
@@ -535,27 +554,33 @@
           <div class="text-xs text-slate-500 space-y-0.5 border-t border-slate-200/60 pt-2">
             <p>📍 <b>Pickup:</b> ${data.pickup}</p>
             <p>🎯 <b>Dropoff:</b> ${data.dropoff}</p>
-            <p class="text-[11px] text-slate-400 mt-1">🔒 <b>Security:</b> ${isCompleted ? 'Verified & Completed' : 'Geofenced OTP Handover Required'}</p>
+            <p class="text-[11px] text-slate-400 mt-1">🔒 <b>Security:</b> ${isCompleted ? 'Verified with Photo POD & OTP' : 'Geofenced OTP & Photo POD Required'}</p>
           </div>
 
           ${isAvailable ? `
-            <button class="btn-claim-job w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 rounded-lg transition">Accept Job (Secure Escrow R140)</button>
+            <button class="btn-claim-job w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 rounded-lg transition">Accept Job (Secure Escrow R${payout})</button>
           ` : ''}
 
           ${isInTransit ? `
-            <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg space-y-2">
-              <p class="text-xs font-bold text-amber-900">🔒 Delivery Verification Handover & GPS Live Stream</p>
-              <p class="text-[11px] text-amber-700">Enter buyer's 4-digit OTP code to complete handover and release R140 payout:</p>
+            <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg space-y-3">
+              <p class="text-xs font-bold text-amber-900">🔒 Proof of Delivery (POD) & OTP Handover</p>
+              <p class="text-[11px] text-amber-700">Attach delivery drop-off photo and enter 4-digit buyer PIN to complete order:</p>
+              
+              <div>
+                <label class="block text-[10px] font-bold text-amber-800 mb-1">📸 Drop-off Photo Proof:</label>
+                <input type="file" accept="image/*" capture="environment" class="input-pod-file w-full text-xs text-slate-600 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-bold file:bg-amber-100 file:text-amber-800">
+              </div>
+
               <div class="flex gap-2">
                 <input type="text" placeholder="Enter PIN (e.g. ${otp})" class="input-otp border border-amber-300 p-1.5 rounded text-xs w-full focus:outline-none focus:ring-1 focus:ring-amber-500">
-                <button class="btn-verify-otp bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">Verify & Complete</button>
+                <button class="btn-verify-otp bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">Verify</button>
               </div>
             </div>
           ` : ''}
 
           ${isCompleted ? `
             <div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded-lg text-xs font-bold text-emerald-800 text-center">
-              ✓ Delivery Verified via OTP & R140 Released to Driver Wallet
+              ✓ Delivery Verified via OTP & Photo POD • R${payout} Released
             </div>
           ` : ''}
         `;
@@ -569,10 +594,21 @@
         if (isInTransit) {
           card.querySelector(".btn-verify-otp").addEventListener("click", async () => {
             const inputVal = card.querySelector(".input-otp").value.trim();
+            const podFile = card.querySelector(".input-pod-file").files[0];
+
+            if (!podFile) {
+              alert("Please attach a proof of delivery photo before completing the job!");
+              return;
+            }
+
             if (inputVal === otp || inputVal === '4829') {
-              await updateDoc(doc(db, "deliveries", docId), { status: "Completed" });
+              const podBase64 = await fileToBase64(podFile);
+              await updateDoc(doc(db, "deliveries", docId), { 
+                status: "Completed",
+                podImage: podBase64 
+              });
             } else {
-              alert(`Incorrect OTP code! For demo testing, enter the code: ${otp}`);
+              alert(`Incorrect OTP code! For demo testing, enter code: ${otp}`);
             }
           });
         }
