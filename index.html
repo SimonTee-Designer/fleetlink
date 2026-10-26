@@ -15,9 +15,10 @@
         <h1 class="text-3xl font-black tracking-tight">FleetLink</h1>
         <p class="text-emerald-100 text-sm font-medium">B2B Merchant Availability & Micro-Logistics Network</p>
       </div>
-      <div class="bg-emerald-800/80 p-1 rounded-xl flex border border-emerald-600 text-xs font-bold">
-        <button id="tab-merchants" class="px-4 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition">Business Directory</button>
-        <button id="tab-jobs" class="px-4 py-2 rounded-lg text-emerald-100 hover:text-white transition">Live Job Feed</button>
+      <div class="bg-emerald-800/80 p-1 rounded-xl flex flex-wrap border border-emerald-600 text-xs font-bold gap-1">
+        <button id="tab-merchants" onclick="window.switchTab('merchants')" class="px-3 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition">Businesses</button>
+        <button id="tab-jobs" onclick="window.switchTab('jobs')" class="px-3 py-2 rounded-lg text-emerald-100 hover:text-white transition">Live Jobs</button>
+        <button id="tab-drivers" onclick="window.switchTab('drivers')" class="px-3 py-2 rounded-lg text-emerald-100 hover:text-white transition">Driver KYC</button>
       </div>
     </div>
 
@@ -31,15 +32,13 @@
         </div>
       </div>
       <div class="flex items-center gap-2 border-t md:border-t-0 md:border-l border-slate-700 pt-2 md:pt-0 md:pl-4">
-        <span class="bg-emerald-400 text-slate-950 font-black px-2 py-0.5 rounded text-[10px]">SECURED</span>
-        <span class="text-slate-300">OTP Handover &bull; Escrow &bull; Quick Delete Controls</span>
+        <span class="bg-emerald-400 text-slate-950 font-black px-2 py-0.5 rounded text-[10px]">VERIFIED</span>
+        <span class="text-slate-300">Driver KYC &bull; OTP Handover &bull; Escrow Protected</span>
       </div>
     </div>
 
     <!-- VIEW 1: Business Directory -->
     <div id="view-merchants" class="space-y-6">
-      
-      <!-- Register Business Form -->
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div class="flex justify-between items-center mb-1">
           <h2 class="font-bold text-lg text-slate-900">Register Local Business Availability</h2>
@@ -56,20 +55,16 @@
         </form>
       </div>
 
-      <!-- Business Directory Cards -->
       <div>
         <h2 class="font-bold text-xl text-slate-800 mb-4">Available Partner Businesses</h2>
         <div id="merchants-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <p class="text-slate-400 italic text-sm py-4 col-span-2 text-center">Loading network businesses...</p>
         </div>
       </div>
-
     </div>
 
     <!-- VIEW 2: Live Deliveries Feed -->
     <div id="view-jobs" class="space-y-6 hidden">
-      
-      <!-- Dispatch Job -->
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div class="flex justify-between items-center mb-3">
           <h2 class="font-bold text-lg text-slate-900">Dispatch Delivery Order</h2>
@@ -86,14 +81,39 @@
         </form>
       </div>
 
-      <!-- Active Delivery List -->
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <h2 class="font-bold text-xl text-slate-800 mb-4">Available Delivery Requests</h2>
         <div id="jobs-list" class="space-y-3">
           <p class="text-slate-400 italic text-sm text-center py-4">Loading real-time jobs...</p>
         </div>
       </div>
+    </div>
 
+    <!-- VIEW 3: Driver Profiling & KYC -->
+    <div id="view-drivers" class="space-y-6 hidden">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div class="flex justify-between items-center mb-1">
+          <h2 class="font-bold text-lg text-slate-900">Driver KYC & Vehicle Profiling</h2>
+          <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-md">Tiered Security Access</span>
+        </div>
+        <p class="text-slate-500 text-xs mb-4">Register your transport profile, license code, and vehicle details to get verified for deliveries.</p>
+        <form id="form-register-driver" onsubmit="return false;">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <input id="driver-name" type="text" placeholder="Full Name & Surname" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+            <input id="driver-phone" type="text" placeholder="Phone Number (e.g. 082 123 4567)" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+            <input id="driver-license" type="text" placeholder="License Code (e.g. Code B, Code A)" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+            <input id="driver-vehicle" type="text" placeholder="Vehicle Reg / Plate (e.g. ND 123-456)" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+          </div>
+          <button id="btn-submit-driver" type="button" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow transition text-sm">Submit Driver KYC Profile</button>
+        </form>
+      </div>
+
+      <div>
+        <h2 class="font-bold text-xl text-slate-800 mb-4">Verified Fleet Driver Network</h2>
+        <div id="drivers-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <p class="text-slate-400 italic text-sm py-4 col-span-2 text-center">Loading driver profiles...</p>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -116,112 +136,168 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Tab Switcher
-    const tabMerchants = document.getElementById("tab-merchants");
-    const tabJobs = document.getElementById("tab-jobs");
-    const viewMerchants = document.getElementById("view-merchants");
-    const viewJobs = document.getElementById("view-jobs");
+    // Global Tab Switcher Function for 3 Views
+    window.switchTab = function(view) {
+      const tabMerchants = document.getElementById("tab-merchants");
+      const tabJobs = document.getElementById("tab-jobs");
+      const tabDrivers = document.getElementById("tab-drivers");
+      const viewMerchants = document.getElementById("view-merchants");
+      const viewJobs = document.getElementById("view-jobs");
+      const viewDrivers = document.getElementById("view-drivers");
 
-    function switchTab(view) {
+      // Hide all
+      viewMerchants.classList.add("hidden");
+      viewJobs.classList.add("hidden");
+      viewDrivers.classList.add("hidden");
+      tabMerchants.className = "px-3 py-2 rounded-lg text-emerald-100 hover:text-white transition";
+      tabJobs.className = "px-3 py-2 rounded-lg text-emerald-100 hover:text-white transition";
+      tabDrivers.className = "px-3 py-2 rounded-lg text-emerald-100 hover:text-white transition";
+
+      // Show selected
       if (view === 'merchants') {
         viewMerchants.classList.remove("hidden");
-        viewJobs.classList.add("hidden");
-        tabMerchants.className = "px-4 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition";
-        tabJobs.className = "px-4 py-2 rounded-lg text-emerald-100 hover:text-white transition";
-      } else {
-        viewMerchants.classList.add("hidden");
+        tabMerchants.className = "px-3 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition";
+      } else if (view === 'jobs') {
         viewJobs.classList.remove("hidden");
-        tabJobs.className = "px-4 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition";
-        tabMerchants.className = "px-4 py-2 rounded-lg text-emerald-100 hover:text-white transition";
+        tabJobs.className = "px-3 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition";
+      } else if (view === 'drivers') {
+        viewDrivers.classList.remove("hidden");
+        tabDrivers.className = "px-3 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition";
       }
-    }
+    };
 
-    tabMerchants.addEventListener("click", () => switchTab('merchants'));
-    tabJobs.addEventListener("click", () => switchTab('jobs'));
+    // Attach form submit listeners
+    document.addEventListener("DOMContentLoaded", () => {
+      // Business Registration
+      const btnSubmitBiz = document.getElementById("btn-submit-biz");
+      if (btnSubmitBiz) {
+        btnSubmitBiz.addEventListener("click", async () => {
+          const name = document.getElementById("biz-name").value.trim();
+          const category = document.getElementById("biz-category").value.trim();
+          const location = document.getElementById("biz-location").value.trim();
 
-    // Submit Business Registration
-    const btnSubmitBiz = document.getElementById("btn-submit-biz");
-    btnSubmitBiz.addEventListener("click", async () => {
-      const name = document.getElementById("biz-name").value.trim();
-      const category = document.getElementById("biz-category").value.trim();
-      const location = document.getElementById("biz-location").value.trim();
+          if (!name || !location) {
+            alert("Please provide both a Business Name and Location address.");
+            return;
+          }
 
-      if (!name || !location) {
-        alert("Please provide both a Business Name and Location address.");
-        return;
-      }
+          btnSubmitBiz.disabled = true;
+          btnSubmitBiz.innerText = "Registering...";
 
-      btnSubmitBiz.disabled = true;
-      btnSubmitBiz.innerText = "Registering...";
+          try {
+            await addDoc(collection(db, "businesses"), {
+              name: name,
+              category: category || "General Retail",
+              location: location,
+              status: "Accepting Orders",
+              plan: "Free Tier",
+              timestamp: new Date()
+            });
 
-      try {
-        await addDoc(collection(db, "businesses"), {
-          name: name,
-          category: category || "General Retail",
-          location: location,
-          status: "Accepting Orders",
-          plan: "Free Tier",
-          timestamp: new Date()
+            document.getElementById("biz-name").value = "";
+            document.getElementById("biz-category").value = "";
+            document.getElementById("biz-location").value = "";
+          } catch (err) {
+            console.error("Firestore Error: ", err);
+          } finally {
+            btnSubmitBiz.disabled = false;
+            btnSubmitBiz.innerText = "Register Business";
+          }
         });
-
-        document.getElementById("biz-name").value = "";
-        document.getElementById("biz-category").value = "";
-        document.getElementById("biz-location").value = "";
-      } catch (err) {
-        console.error("Firestore Error: ", err);
-      } finally {
-        btnSubmitBiz.disabled = false;
-        btnSubmitBiz.innerText = "Register Business";
-      }
-    });
-
-    // Submit Delivery Job Request
-    const btnSubmitJob = document.getElementById("btn-submit-job");
-    btnSubmitJob.addEventListener("click", async () => {
-      const merchant = document.getElementById("job-merchant").value.trim();
-      const pickup = document.getElementById("job-pickup").value.trim();
-      const dropoff = document.getElementById("job-dropoff").value.trim();
-      const item = document.getElementById("job-item").value.trim();
-
-      if (!merchant || !pickup || !dropoff) {
-        alert("Please fill in merchant name, pickup, and dropoff fields.");
-        return;
       }
 
-      btnSubmitJob.disabled = true;
-      btnSubmitJob.innerText = "Dispatching...";
+      // Delivery Job Dispatch
+      const btnSubmitJob = document.getElementById("btn-submit-job");
+      if (btnSubmitJob) {
+        btnSubmitJob.addEventListener("click", async () => {
+          const merchant = document.getElementById("job-merchant").value.trim();
+          const pickup = document.getElementById("job-pickup").value.trim();
+          const dropoff = document.getElementById("job-dropoff").value.trim();
+          const item = document.getElementById("job-item").value.trim();
 
-      const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+          if (!merchant || !pickup || !dropoff) {
+            alert("Please fill in merchant name, pickup, and dropoff fields.");
+            return;
+          }
 
-      try {
-        await addDoc(collection(db, "deliveries"), {
-          merchant: merchant,
-          pickup: pickup,
-          dropoff: dropoff,
-          item: item || "General Goods",
-          status: "Available",
-          otpCode: generatedOtp,
-          totalFee: 150,
-          driverPayout: 140,
-          platformFee: 10,
-          timestamp: new Date()
+          btnSubmitJob.disabled = true;
+          btnSubmitJob.innerText = "Dispatching...";
+          const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
+          try {
+            await addDoc(collection(db, "deliveries"), {
+              merchant: merchant,
+              pickup: pickup,
+              dropoff: dropoff,
+              item: item || "General Goods",
+              status: "Available",
+              otpCode: generatedOtp,
+              totalFee: 150,
+              driverPayout: 140,
+              platformFee: 10,
+              timestamp: new Date()
+            });
+
+            document.getElementById("job-merchant").value = "";
+            document.getElementById("job-pickup").value = "";
+            document.getElementById("job-dropoff").value = "";
+            document.getElementById("job-item").value = "";
+          } catch (err) {
+            console.error("Job Submit Error: ", err);
+          } finally {
+            btnSubmitJob.disabled = false;
+            btnSubmitJob.innerText = "Post Job to Drivers (R150)";
+          }
         });
+      }
 
-        document.getElementById("job-merchant").value = "";
-        document.getElementById("job-pickup").value = "";
-        document.getElementById("job-dropoff").value = "";
-        document.getElementById("job-item").value = "";
-      } catch (err) {
-        console.error("Job Submit Error: ", err);
-      } finally {
-        btnSubmitJob.disabled = false;
-        btnSubmitJob.innerText = "Post Job to Drivers (R150)";
+      // Driver KYC Registration
+      const btnSubmitDriver = document.getElementById("btn-submit-driver");
+      if (btnSubmitDriver) {
+        btnSubmitDriver.addEventListener("click", async () => {
+          const name = document.getElementById("driver-name").value.trim();
+          const phone = document.getElementById("driver-phone").value.trim();
+          const license = document.getElementById("driver-license").value.trim();
+          const vehicle = document.getElementById("driver-vehicle").value.trim();
+
+          if (!name || !phone || !license || !vehicle) {
+            alert("Please complete all driver KYC fields.");
+            return;
+          }
+
+          btnSubmitDriver.disabled = true;
+          btnSubmitDriver.innerText = "Submitting KYC...";
+
+          try {
+            await addDoc(collection(db, "drivers"), {
+              name: name,
+              phone: phone,
+              licenseCode: license,
+              vehicleReg: vehicle,
+              rating: 5.0,
+              completedJobs: 0,
+              tier: "Restricted Tier (Pending Admin Review)",
+              timestamp: new Date()
+            });
+
+            document.getElementById("driver-name").value = "";
+            document.getElementById("driver-phone").value = "";
+            document.getElementById("driver-license").value = "";
+            document.getElementById("driver-vehicle").value = "";
+          } catch (err) {
+            console.error("Driver KYC Error: ", err);
+          } finally {
+            btnSubmitDriver.disabled = false;
+            btnSubmitDriver.innerText = "Submit Driver KYC Profile";
+          }
+        });
       }
     });
 
     // Real-Time Listener: Businesses
     onSnapshot(collection(db, "businesses"), (snapshot) => {
       const list = document.getElementById("merchants-list");
+      if (!list) return;
       list.innerHTML = "";
 
       if (snapshot.empty) {
@@ -274,7 +350,7 @@
         });
 
         card.querySelector(".btn-quick-dispatch").addEventListener("click", () => {
-          switchTab('jobs');
+          window.switchTab('jobs');
           document.getElementById("job-merchant").value = data.name || '';
           document.getElementById("job-pickup").value = data.location || '';
         });
@@ -283,9 +359,70 @@
       });
     });
 
-    // Real-Time Listener: Deliveries Feed with Delete Feature
+    // Real-Time Listener: Drivers Network & KYC
+    onSnapshot(collection(db, "drivers"), (snapshot) => {
+      const list = document.getElementById("drivers-list");
+      if (!list) return;
+      list.innerHTML = "";
+
+      if (snapshot.empty) {
+        list.innerHTML = `<p class="text-slate-500 bg-white p-6 rounded-xl border col-span-2 text-center text-sm font-medium">No drivers registered yet. Submit a KYC profile above!</p>`;
+        return;
+      }
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const docId = docSnap.id;
+        const isVerified = data.tier === 'Fully Vetted & Verified Tier';
+
+        const card = document.createElement("div");
+        card.className = "p-5 border border-slate-200 rounded-xl bg-white shadow-sm hover:border-emerald-300 transition space-y-3";
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 class="font-bold text-slate-900 text-base">🚗 ${data.name}</h3>
+              <p class="text-xs text-slate-500">📞 ${data.phone}</p>
+            </div>
+            <button class="btn-toggle-tier text-[11px] font-bold px-2.5 py-1 rounded transition ${isVerified ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+              ${isVerified ? '✓ Verified Tier' : '⏳ Restricted Tier'}
+            </button>
+          </div>
+
+          <div class="text-xs text-slate-600 space-y-1 border-t border-slate-100 pt-2">
+            <p>🆔 <b>License Code:</b> ${data.licenseCode}</p>
+            <p>🚙 <b>Vehicle Reg:</b> ${data.vehicleReg}</p>
+            <p>⭐ <b>Rating:</b> ${data.rating} / 5.0 (${data.completedJobs || 0} jobs completed)</p>
+          </div>
+
+          <div class="flex gap-2 pt-1">
+            <button class="btn-verify-driver flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 rounded transition">
+              ${isVerified ? 'Revoke Vetting' : 'Approve & Verify Driver'}
+            </button>
+            <button class="btn-delete-driver text-slate-400 hover:text-red-600 text-xs font-bold px-2 py-1.5 border rounded transition" title="Remove Driver">🗑️</button>
+          </div>
+        `;
+
+        // Toggle verification tier
+        card.querySelector(".btn-verify-driver").addEventListener("click", async () => {
+          const nextTier = isVerified ? 'Restricted Tier (Pending Admin Review)' : 'Fully Vetted & Verified Tier';
+          await updateDoc(doc(db, "drivers", docId), { tier: nextTier });
+        });
+
+        // Delete driver profile
+        card.querySelector(".btn-delete-driver").addEventListener("click", async () => {
+          if (confirm("Are you sure you want to remove this driver profile?")) {
+            await deleteDoc(doc(db, "drivers", docId));
+          }
+        });
+
+        list.appendChild(card);
+      });
+    });
+
+    // Real-Time Listener: Deliveries Feed
     onSnapshot(collection(db, "deliveries"), (snapshot) => {
       const list = document.getElementById("jobs-list");
+      if (!list) return;
       list.innerHTML = "";
 
       if (snapshot.empty) {
@@ -300,7 +437,6 @@
         const isAvailable = status === 'Available';
         const isInTransit = status === 'In Transit';
         const isCompleted = status === 'Completed';
-
         const otp = data.otpCode || '4829';
 
         const card = document.createElement("div");
@@ -351,14 +487,12 @@
           ` : ''}
         `;
 
-        // Claim Job Handler
         if (isAvailable) {
           card.querySelector(".btn-claim-job").addEventListener("click", async () => {
             await updateDoc(doc(db, "deliveries", docId), { status: "In Transit" });
           });
         }
 
-        // Verify OTP Handover Handler
         if (isInTransit) {
           card.querySelector(".btn-verify-otp").addEventListener("click", async () => {
             const inputVal = card.querySelector(".input-otp").value.trim();
@@ -370,14 +504,9 @@
           });
         }
 
-        // Delete Job Handler
         card.querySelector(".btn-delete-job").addEventListener("click", async () => {
           if (confirm("Are you sure you want to delete this delivery request?")) {
-            try {
-              await deleteDoc(doc(db, "deliveries", docId));
-            } catch (err) {
-              console.error("Error deleting job: ", err);
-            }
+            await deleteDoc(doc(db, "deliveries", docId));
           }
         });
 
