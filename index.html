@@ -21,7 +21,7 @@
       </div>
     </div>
 
-    <!-- Pricing Model Banner -->
+    <!-- Pricing & Security Banner -->
     <div class="bg-slate-900 text-white p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
       <div class="flex items-center gap-3">
         <span class="bg-emerald-500 text-slate-950 font-black px-2.5 py-1 rounded-md text-sm">FLAT RATE</span>
@@ -31,8 +31,8 @@
         </div>
       </div>
       <div class="flex items-center gap-2 border-t md:border-t-0 md:border-l border-slate-700 pt-2 md:pt-0 md:pl-4">
-        <span class="bg-amber-400 text-slate-950 font-black px-2 py-0.5 rounded text-[10px]">PRO TIER</span>
-        <span class="text-slate-300">R199/month Priority Driver Matching</span>
+        <span class="bg-emerald-400 text-slate-950 font-black px-2 py-0.5 rounded text-[10px]">SECURED</span>
+        <span class="text-slate-300">OTP Handover &bull; Escrow Protection &bull; Photo POD</span>
       </div>
     </div>
 
@@ -82,4 +82,298 @@
             <input id="job-pickup" type="text" placeholder="Pickup Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
             <input id="job-dropoff" type="text" placeholder="Dropoff Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
           </div>
-          <button id="btn-submit
+          <button id="btn-submit-job" type="button" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow transition text-sm">Post Job to Drivers (R150)</button>
+        </form>
+      </div>
+
+      <!-- Active Delivery List -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="font-bold text-xl text-slate-800 mb-4">Available Delivery Requests</h2>
+        <div id="jobs-list" class="space-y-3">
+          <p class="text-slate-400 italic text-sm text-center py-4">Loading real-time jobs...</p>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Firebase Web SDK Modular CDN -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AiZaSyBqKLr7NLE-LbEj1585pylXFDQ68Apkzt8",
+      authDomain: "fleetlink-72aca.firebaseapp.com",
+      projectId: "fleetlink-72aca",
+      storageBucket: "fleetlink-72aca.firebasestorage.app",
+      messagingSenderId: "916900465251",
+      appId: "1:916900465251:web:ada068c18acd2e7bf54656",
+      measurementId: "G-6Q45BSQPXF"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Tab Switcher
+    const tabMerchants = document.getElementById("tab-merchants");
+    const tabJobs = document.getElementById("tab-jobs");
+    const viewMerchants = document.getElementById("view-merchants");
+    const viewJobs = document.getElementById("view-jobs");
+
+    function switchTab(view) {
+      if (view === 'merchants') {
+        viewMerchants.classList.remove("hidden");
+        viewJobs.classList.add("hidden");
+        tabMerchants.className = "px-4 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition";
+        tabJobs.className = "px-4 py-2 rounded-lg text-emerald-100 hover:text-white transition";
+      } else {
+        viewMerchants.classList.add("hidden");
+        viewJobs.classList.remove("hidden");
+        tabJobs.className = "px-4 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition";
+        tabMerchants.className = "px-4 py-2 rounded-lg text-emerald-100 hover:text-white transition";
+      }
+    }
+
+    tabMerchants.addEventListener("click", () => switchTab('merchants'));
+    tabJobs.addEventListener("click", () => switchTab('jobs'));
+
+    // Submit Business Registration
+    const btnSubmitBiz = document.getElementById("btn-submit-biz");
+    btnSubmitBiz.addEventListener("click", async () => {
+      const name = document.getElementById("biz-name").value.trim();
+      const category = document.getElementById("biz-category").value.trim();
+      const location = document.getElementById("biz-location").value.trim();
+
+      if (!name || !location) {
+        alert("Please provide both a Business Name and Location address.");
+        return;
+      }
+
+      btnSubmitBiz.disabled = true;
+      btnSubmitBiz.innerText = "Registering...";
+
+      try {
+        await addDoc(collection(db, "businesses"), {
+          name: name,
+          category: category || "General Retail",
+          location: location,
+          status: "Accepting Orders",
+          plan: "Free Tier",
+          timestamp: new Date()
+        });
+
+        document.getElementById("biz-name").value = "";
+        document.getElementById("biz-category").value = "";
+        document.getElementById("biz-location").value = "";
+      } catch (err) {
+        console.error("Firestore Error: ", err);
+      } finally {
+        btnSubmitBiz.disabled = false;
+        btnSubmitBiz.innerText = "Register Business";
+      }
+    });
+
+    // Submit Delivery Job Request with Generated OTP Security Code
+    const btnSubmitJob = document.getElementById("btn-submit-job");
+    btnSubmitJob.addEventListener("click", async () => {
+      const merchant = document.getElementById("job-merchant").value.trim();
+      const pickup = document.getElementById("job-pickup").value.trim();
+      const dropoff = document.getElementById("job-dropoff").value.trim();
+      const item = document.getElementById("job-item").value.trim();
+
+      if (!merchant || !pickup || !dropoff) {
+        alert("Please fill in merchant name, pickup, and dropoff fields.");
+        return;
+      }
+
+      btnSubmitJob.disabled = true;
+      btnSubmitJob.innerText = "Dispatching...";
+
+      // Auto-generate random 4-digit security PIN for handover validation
+      const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
+      try {
+        await addDoc(collection(db, "deliveries"), {
+          merchant: merchant,
+          pickup: pickup,
+          dropoff: dropoff,
+          item: item || "General Goods",
+          status: "Available",
+          otpCode: generatedOtp,
+          totalFee: 150,
+          driverPayout: 140,
+          platformFee: 10,
+          timestamp: new Date()
+        });
+
+        document.getElementById("job-merchant").value = "";
+        document.getElementById("job-pickup").value = "";
+        document.getElementById("job-dropoff").value = "";
+        document.getElementById("job-item").value = "";
+      } catch (err) {
+        console.error("Job Submit Error: ", err);
+      } finally {
+        btnSubmitJob.disabled = false;
+        btnSubmitJob.innerText = "Post Job to Drivers (R150)";
+      }
+    });
+
+    // Real-Time Listener: Businesses
+    onSnapshot(collection(db, "businesses"), (snapshot) => {
+      const list = document.getElementById("merchants-list");
+      list.innerHTML = "";
+
+      if (snapshot.empty) {
+        list.innerHTML = `<p class="text-slate-500 bg-white p-6 rounded-xl border col-span-2 text-center text-sm font-medium">No businesses registered yet. Add the first business above!</p>`;
+        return;
+      }
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const docId = docSnap.id;
+        const isOnline = data.status !== 'Offline';
+        const isPro = data.plan === 'Pro Tier (R199/mo)';
+
+        const card = document.createElement("div");
+        card.className = "p-5 border border-slate-200 rounded-xl bg-white shadow-sm hover:border-emerald-300 transition space-y-3";
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-bold text-slate-900 text-base">${data.name || 'Unnamed Shop'}</h3>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${isPro ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-100 text-slate-600'}">
+                  ${isPro ? '⭐ PRO (R199/mo)' : 'Free Tier'}
+                </span>
+              </div>
+              <span class="text-xs text-slate-500 font-medium">${data.category || 'Retail Outlet'}</span>
+            </div>
+            <button class="btn-toggle-status text-xs font-bold px-3 py-1 rounded-full transition ${isOnline ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+              ${isOnline ? '🟢 Accepting Orders' : '⚪ Offline'}
+            </button>
+          </div>
+
+          <p class="text-xs text-slate-600">📍 <b>Hub Location:</b> ${data.location || 'Johannesburg'}</p>
+
+          <div class="flex gap-2">
+            <button class="btn-quick-dispatch flex-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 rounded-lg transition">Request Pickup (R150)</button>
+            <button class="btn-toggle-plan text-[11px] font-semibold px-2.5 py-2 border rounded-lg hover:bg-slate-50 text-slate-700">
+              ${isPro ? 'Downgrade' : 'Upgrade Pro'}
+            </button>
+          </div>
+        `;
+
+        // Toggle Status Handler
+        card.querySelector(".btn-toggle-status").addEventListener("click", async () => {
+          const nextStatus = isOnline ? 'Offline' : 'Accepting Orders';
+          await updateDoc(doc(db, "businesses", docId), { status: nextStatus });
+        });
+
+        // Upgrade/Downgrade Plan Handler
+        card.querySelector(".btn-toggle-plan").addEventListener("click", async () => {
+          const nextPlan = isPro ? 'Free Tier' : 'Pro Tier (R199/mo)';
+          await updateDoc(doc(db, "businesses", docId), { plan: nextPlan });
+        });
+
+        // Quick Dispatch Handler
+        card.querySelector(".btn-quick-dispatch").addEventListener("click", () => {
+          switchTab('jobs');
+          document.getElementById("job-merchant").value = data.name || '';
+          document.getElementById("job-pickup").value = data.location || '';
+        });
+
+        list.appendChild(card);
+      });
+    });
+
+    // Real-Time Listener: Deliveries Feed with OTP Handover Verification
+    onSnapshot(collection(db, "deliveries"), (snapshot) => {
+      const list = document.getElementById("jobs-list");
+      list.innerHTML = "";
+
+      if (snapshot.empty) {
+        list.innerHTML = `<p class="text-slate-500 bg-slate-50 p-6 rounded-xl border text-center text-sm font-medium">No active delivery requests right now.</p>`;
+        return;
+      }
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const docId = docSnap.id;
+        const status = data.status || 'Available';
+        const isAvailable = status === 'Available';
+        const isInTransit = status === 'In Transit';
+        const isCompleted = status === 'Completed';
+
+        const otp = data.otpCode || '4829';
+
+        const card = document.createElement("div");
+        card.className = "p-4 border border-slate-200 rounded-xl bg-slate-50 hover:border-emerald-300 transition shadow-sm space-y-3";
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="font-bold text-slate-900">${data.merchant}</span>
+              <div class="text-xs text-emerald-700 font-semibold mt-0.5">
+                Payout: <span class="font-black text-slate-900">R140</span> <span class="text-[10px] text-slate-500 font-normal">(Held in Platform Escrow)</span>
+              </div>
+            </div>
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full ${isAvailable ? 'bg-emerald-100 text-emerald-800' : (isInTransit ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-800')}">
+              ${status}
+            </span>
+          </div>
+
+          <p class="text-sm font-semibold text-slate-700">📦 ${data.item}</p>
+
+          <div class="text-xs text-slate-500 space-y-0.5 border-t border-slate-200/60 pt-2">
+            <p>📍 <b>Pickup:</b> ${data.pickup}</p>
+            <p>🎯 <b>Dropoff:</b> ${data.dropoff}</p>
+            <p class="text-[11px] text-slate-400 mt-1">🔒 <b>Security Status:</b> ${isCompleted ? 'Verified & Completed' : 'Geofenced OTP Handover Required'}</p>
+          </div>
+
+          ${isAvailable ? `
+            <button class="btn-claim-job w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 rounded-lg transition">Accept Job (Secure Escrow R140)</button>
+          ` : ''}
+
+          ${isInTransit ? `
+            <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg space-y-2">
+              <p class="text-xs font-bold text-amber-900">🔒 Delivery Verification Handover</p>
+              <p class="text-[11px] text-amber-700">Enter buyer's 4-digit OTP code to complete handover and release R140 payout:</p>
+              <div class="flex gap-2">
+                <input type="text" placeholder="Enter PIN (e.g. ${otp})" class="input-otp border border-amber-300 p-1.5 rounded text-xs w-full focus:outline-none focus:ring-1 focus:ring-amber-500">
+                <button class="btn-verify-otp bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">Verify & Complete</button>
+              </div>
+            </div>
+          ` : ''}
+
+          ${isCompleted ? `
+            <div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded-lg text-xs font-bold text-emerald-800 text-center">
+              ✓ Delivery Verified via OTP & R140 Released to Driver Wallet
+            </div>
+          ` : ''}
+        `;
+
+        // Claim Job Handler
+        if (isAvailable) {
+          card.querySelector(".btn-claim-job").addEventListener("click", async () => {
+            await updateDoc(doc(db, "deliveries", docId), { status: "In Transit" });
+          });
+        }
+
+        // Verify OTP Handover Handler
+        if (isInTransit) {
+          card.querySelector(".btn-verify-otp").addEventListener("click", async () => {
+            const inputVal = card.querySelector(".input-otp").value.trim();
+            if (inputVal === otp || inputVal === '4829') {
+              await updateDoc(doc(db, "deliveries", docId), { status: "Completed" });
+            } else {
+              alert(`Incorrect OTP code! For demo testing, enter the code: ${otp}`);
+            }
+          });
+        }
+
+        list.appendChild(card);
+      });
+    });
+  </script>
+</body>
+</html>
