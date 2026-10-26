@@ -16,8 +16,8 @@
         <p class="text-emerald-100 text-sm font-medium">B2B Merchant Availability & Micro-Logistics Network</p>
       </div>
       <div class="bg-emerald-800/80 p-1 rounded-xl flex border border-emerald-600 text-xs font-bold">
-        <button id="tab-merchants" onclick="switchView('merchants')" class="px-4 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition">Business Directory</button>
-        <button id="tab-jobs" onclick="switchView('jobs')" class="px-4 py-2 rounded-lg text-emerald-100 hover:text-white transition">Live Job Feed</button>
+        <button id="tab-merchants" class="px-4 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition">Business Directory</button>
+        <button id="tab-jobs" class="px-4 py-2 rounded-lg text-emerald-100 hover:text-white transition">Live Job Feed</button>
       </div>
     </div>
 
@@ -28,12 +28,14 @@
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <h2 class="font-bold text-lg text-slate-900 mb-1">Register Local Business Availability</h2>
         <p class="text-slate-500 text-xs mb-4">List your store so drivers can find and service your regular deliveries.</p>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-          <input id="biz-name" type="text" placeholder="Business Name (e.g. Cosmo Bakery)" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-          <input id="biz-category" type="text" placeholder="Category (e.g. Retail, Grocery)" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-          <input id="biz-location" type="text" placeholder="Location / Hub Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-        </div>
-        <button onclick="registerBusiness()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow transition text-sm">Register Business</button>
+        <form id="form-register-biz" onsubmit="return false;">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+            <input id="biz-name" type="text" placeholder="Business Name (e.g. Cosmo Bakery)" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+            <input id="biz-category" type="text" placeholder="Category (e.g. Retail, Grocery)" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <input id="biz-location" type="text" placeholder="Location / Hub Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+          </div>
+          <button id="btn-submit-biz" type="button" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow transition text-sm">Register Business</button>
+        </form>
       </div>
 
       <!-- Business Directory Cards -->
@@ -52,13 +54,15 @@
       <!-- Create Delivery Job -->
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <h2 class="font-bold text-lg text-slate-900 mb-3">Dispatch Delivery Order</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-          <input id="job-merchant" type="text" placeholder="Merchant Name" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-          <input id="job-item" type="text" placeholder="Package Description" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-          <input id="job-pickup" type="text" placeholder="Pickup Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-          <input id="job-dropoff" type="text" placeholder="Dropoff Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-        </div>
-        <button onclick="submitJob()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow transition text-sm">Post Job to Drivers</button>
+        <form id="form-create-job" onsubmit="return false;">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <input id="job-merchant" type="text" placeholder="Merchant Name" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+            <input id="job-item" type="text" placeholder="Package Description" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <input id="job-pickup" type="text" placeholder="Pickup Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+            <input id="job-dropoff" type="text" placeholder="Dropoff Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+          </div>
+          <button id="btn-submit-job" type="button" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow transition text-sm">Post Job to Drivers</button>
+        </form>
       </div>
 
       <!-- Active Delivery List -->
@@ -91,7 +95,104 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Listen to Businesses Collection
+    // Tab Navigation Setup
+    const tabMerchants = document.getElementById("tab-merchants");
+    const tabJobs = document.getElementById("tab-jobs");
+    const viewMerchants = document.getElementById("view-merchants");
+    const viewJobs = document.getElementById("view-jobs");
+
+    function switchTab(view) {
+      if (view === 'merchants') {
+        viewMerchants.classList.remove("hidden");
+        viewJobs.classList.add("hidden");
+        tabMerchants.className = "px-4 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition";
+        tabJobs.className = "px-4 py-2 rounded-lg text-emerald-100 hover:text-white transition";
+      } else {
+        viewMerchants.classList.add("hidden");
+        viewJobs.classList.remove("hidden");
+        tabJobs.className = "px-4 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition";
+        tabMerchants.className = "px-4 py-2 rounded-lg text-emerald-100 hover:text-white transition";
+      }
+    }
+
+    tabMerchants.addEventListener("click", () => switchTab('merchants'));
+    tabJobs.addEventListener("click", () => switchTab('jobs'));
+
+    // Submit Business Registration
+    const btnSubmitBiz = document.getElementById("btn-submit-biz");
+    btnSubmitBiz.addEventListener("click", async () => {
+      const name = document.getElementById("biz-name").value.trim();
+      const category = document.getElementById("biz-category").value.trim();
+      const location = document.getElementById("biz-location").value.trim();
+
+      if (!name || !location) {
+        alert("Please provide both a Business Name and Location address.");
+        return;
+      }
+
+      btnSubmitBiz.disabled = true;
+      btnSubmitBiz.innerText = "Registering...";
+
+      try {
+        await addDoc(collection(db, "businesses"), {
+          name: name,
+          category: category || "General Retail",
+          location: location,
+          status: "Accepting Orders",
+          timestamp: new Date()
+        });
+
+        document.getElementById("biz-name").value = "";
+        document.getElementById("biz-category").value = "";
+        document.getElementById("biz-location").value = "";
+      } catch (err) {
+        console.error("Firestore Save Error: ", err);
+        alert("Could not save to database. Check Firestore Rules in Firebase Console.");
+      } finally {
+        btnSubmitBiz.disabled = false;
+        btnSubmitBiz.innerText = "Register Business";
+      }
+    });
+
+    // Submit Delivery Job Request
+    const btnSubmitJob = document.getElementById("btn-submit-job");
+    btnSubmitJob.addEventListener("click", async () => {
+      const merchant = document.getElementById("job-merchant").value.trim();
+      const pickup = document.getElementById("job-pickup").value.trim();
+      const dropoff = document.getElementById("job-dropoff").value.trim();
+      const item = document.getElementById("job-item").value.trim();
+
+      if (!merchant || !pickup || !dropoff) {
+        alert("Please fill in merchant name, pickup, and dropoff fields.");
+        return;
+      }
+
+      btnSubmitJob.disabled = true;
+      btnSubmitJob.innerText = "Dispatching...";
+
+      try {
+        await addDoc(collection(db, "deliveries"), {
+          merchant: merchant,
+          pickup: pickup,
+          dropoff: dropoff,
+          item: item || "General Goods",
+          status: "Available",
+          timestamp: new Date()
+        });
+
+        document.getElementById("job-merchant").value = "";
+        document.getElementById("job-pickup").value = "";
+        document.getElementById("job-dropoff").value = "";
+        document.getElementById("job-item").value = "";
+      } catch (err) {
+        console.error("Job Submit Error: ", err);
+      } finally {
+        btnSubmitJob.disabled = false;
+        btnSubmitJob.innerText = "Post Job to Drivers";
+      }
+    });
+
+    // Real-Time Listener: Businesses
     onSnapshot(collection(db, "businesses"), (snapshot) => {
       const list = document.getElementById("merchants-list");
       list.innerHTML = "";
@@ -101,10 +202,89 @@
         return;
       }
 
-      snapshot.forEach(documentItem => {
-        const data = documentItem.data();
-        const docId = documentItem.id;
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const docId = docSnap.id;
         const isOnline = data.status !== 'Offline';
 
-        list.innerHTML += `
-          <div class="p-5 border border-slate-200 rounded-xl bg-white shadow-sm hover:border-emerald
+        const card = document.createElement("div");
+        card.className = "p-5 border border-slate-200 rounded-xl bg-white shadow-sm hover:border-emerald-300 transition";
+        card.innerHTML = `
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <h3 class="font-bold text-slate-900 text-base">${data.name || 'Unnamed Shop'}</h3>
+              <span class="text-xs text-slate-500 font-medium">${data.category || 'Retail Outlet'}</span>
+            </div>
+            <button class="btn-toggle-status text-xs font-bold px-3 py-1 rounded-full transition ${isOnline ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+              ${isOnline ? '🟢 Accepting Orders' : '⚪ Offline'}
+            </button>
+          </div>
+          <p class="text-xs text-slate-600 mb-4">📍 <b>Hub Location:</b> ${data.location || 'Johannesburg'}</p>
+          <button class="btn-quick-dispatch w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 rounded-lg transition">Request Pickup from Business</button>
+        `;
+
+        // Toggle Status Handler
+        card.querySelector(".btn-toggle-status").addEventListener("click", async () => {
+          const nextStatus = isOnline ? 'Offline' : 'Accepting Orders';
+          await updateDoc(doc(db, "businesses", docId), { status: nextStatus });
+        });
+
+        // Quick Dispatch Handler
+        card.querySelector(".btn-quick-dispatch").addEventListener("click", () => {
+          switchTab('jobs');
+          document.getElementById("job-merchant").value = data.name || '';
+          document.getElementById("job-pickup").value = data.location || '';
+        });
+
+        list.appendChild(card);
+      });
+    });
+
+    // Real-Time Listener: Deliveries Feed
+    onSnapshot(collection(db, "deliveries"), (snapshot) => {
+      const list = document.getElementById("jobs-list");
+      list.innerHTML = "";
+
+      if (snapshot.empty) {
+        list.innerHTML = `<p class="text-slate-500 bg-slate-50 p-6 rounded-xl border text-center text-sm font-medium">No active delivery requests right now.</p>`;
+        return;
+      }
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const docId = docSnap.id;
+        const status = data.status || 'Available';
+        const isAvailable = status === 'Available';
+
+        const card = document.createElement("div");
+        card.className = "p-4 border border-slate-200 rounded-xl bg-slate-50 hover:border-emerald-300 transition shadow-sm";
+        card.innerHTML = `
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <span class="font-bold text-slate-900">${data.merchant}</span>
+              <span class="text-xs text-slate-500 block">Est. Payout: R150</span>
+            </div>
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full ${isAvailable ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+              ${status}
+            </span>
+          </div>
+          <p class="text-sm font-semibold text-slate-700 mb-2">📦 ${data.item}</p>
+          <div class="text-xs text-slate-500 space-y-0.5 border-t border-slate-200/60 pt-2 mb-3">
+            <p>📍 <b>Pickup:</b> ${data.pickup}</p>
+            <p>🎯 <b>Dropoff:</b> ${data.dropoff}</p>
+          </div>
+          ${isAvailable ? `<button class="btn-claim-job w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 rounded-lg transition">Accept Delivery Job</button>` : ''}
+        `;
+
+        if (isAvailable) {
+          card.querySelector(".btn-claim-job").addEventListener("click", async () => {
+            await updateDoc(doc(db, "deliveries", docId), { status: "In Transit" });
+          });
+        }
+
+        list.appendChild(card);
+      });
+    });
+  </script>
+</body>
+</html>
