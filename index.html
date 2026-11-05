@@ -1,627 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FleetLink - Micro-Logistics Marketplace</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Leaflet OpenStreetMap CSS & JS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FleetLink | Merchant Profit & Safety Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .red-zone-pulse {
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+    </style>
 </head>
-<body class="bg-slate-100 font-sans p-4 md:p-8 min-h-screen">
-  <div class="max-w-4xl mx-auto space-y-6">
+<body class="bg-gray-100 min-h-screen text-gray-800 p-4 md:p-8">
 
-    <!-- Header & Navigation -->
-    <div class="bg-emerald-700 text-white p-6 rounded-2xl shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <div>
-        <h1 class="text-3xl font-black tracking-tight">FleetLink</h1>
-        <p class="text-emerald-100 text-sm font-medium">B2B Merchant Availability & Micro-Logistics Network</p>
-      </div>
-      <div class="bg-emerald-800/80 p-1 rounded-xl flex flex-wrap border border-emerald-600 text-xs font-bold gap-1">
-        <button id="tab-merchants" onclick="window.switchTab('merchants')" class="px-3 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition">Businesses</button>
-        <button id="tab-jobs" onclick="window.switchTab('jobs')" class="px-3 py-2 rounded-lg text-emerald-100 hover:text-white transition">Live Jobs & Tracking</button>
-        <button id="tab-drivers" onclick="window.switchTab('drivers')" class="px-3 py-2 rounded-lg text-emerald-100 hover:text-white transition">Driver KYC</button>
-      </div>
-    </div>
-
-    <!-- Pricing & Security Banner -->
-    <div class="bg-slate-900 text-white p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
-      <div class="flex items-center gap-3">
-        <span class="bg-emerald-500 text-slate-950 font-black px-2.5 py-1 rounded-md text-sm">TIERED FLEET</span>
-        <div>
-          <p class="font-bold text-slate-100">Moto (R150) &bull; Bakkie (R350 Wholesale)</p>
-          <p class="text-slate-400">Escrow Protected &bull; Photo POD &bull; OTP Handover</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2 border-t md:border-t-0 md:border-l border-slate-700 pt-2 md:pt-0 md:pl-4">
-        <span class="bg-emerald-400 text-slate-950 font-black px-2 py-0.5 rounded text-[10px]">LIVE GPS</span>
-        <span class="text-slate-300">OpenStreetMap Route Tracking Active</span>
-      </div>
-    </div>
-
-    <!-- VIEW 1: Business Directory -->
-    <div id="view-merchants" class="space-y-6">
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <div class="flex justify-between items-center mb-1">
-          <h2 class="font-bold text-lg text-slate-900">Register Local Business Availability</h2>
-          <span class="text-xs bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-md">Free Listing Tier (R0/mo)</span>
-        </div>
-        <p class="text-slate-500 text-xs mb-4">List your store so drivers can find and service your regular deliveries on-demand.</p>
-        <form id="form-register-biz" onsubmit="return false;">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-            <input id="biz-name" type="text" placeholder="Business Name (e.g. Cosmo Bakery)" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
-            <input id="biz-category" type="text" placeholder="Category (e.g. Retail, Grocery)" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-            <input id="biz-location" type="text" placeholder="Location / Hub Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
-          </div>
-          <button id="btn-submit-biz" type="button" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow transition text-sm">Register Business</button>
-        </form>
-      </div>
-
-      <div>
-        <h2 class="font-bold text-xl text-slate-800 mb-4">Available Partner Businesses</h2>
-        <div id="merchants-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <p class="text-slate-400 italic text-sm py-4 col-span-2 text-center">Loading network businesses...</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- VIEW 2: Live Deliveries Feed & GPS Tracking -->
-    <div id="view-jobs" class="space-y-6 hidden">
-      <!-- Live Map Section -->
-      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-2">
-        <div class="flex justify-between items-center">
-          <h2 class="font-bold text-base text-slate-900 flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span> Live Delivery Tracking Map
-          </h2>
-          <span class="text-[11px] font-bold text-slate-500">Johannesburg & Township Hub</span>
-        </div>
-        <div id="map" class="w-full h-64 rounded-xl border border-slate-200 z-0"></div>
-      </div>
-
-      <!-- Dispatch Job with Vehicle Class Options -->
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <div class="flex justify-between items-center mb-3">
-          <h2 class="font-bold text-lg text-slate-900">Dispatch Delivery Order</h2>
-          <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-md">Tiered Vehicle Selection</span>
-        </div>
-        <form id="form-create-job" onsubmit="return false;">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-            <input id="job-merchant" type="text" placeholder="Merchant Name" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
-            <input id="job-item" type="text" placeholder="Package Description" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-            <input id="job-pickup" type="text" placeholder="Pickup Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
-            <input id="job-dropoff" type="text" placeholder="Dropoff Address" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
-            
-            <div class="sm:col-span-2">
-              <label class="block text-[11px] font-bold text-slate-700 mb-1">🚚 Select Vehicle & Pricing Tier:</label>
-              <select id="job-vehicle-tier" class="border border-slate-300 p-2.5 rounded-lg text-sm w-full focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                <option value="moto">Motorcycle / Scooter &bull; R150 Total (R140 Driver Payout &bull; R10 Platform Fee)</option>
-                <option value="bakkie">Light Bakkie / Van (Wholesale) &bull; R350 Total (R320 Driver Payout &bull; R30 Platform Fee)</option>
-              </select>
+    <div class="max-w-4xl mx-auto space-y-6">
+        
+        <!-- Local Merchant Ad Banner -->
+        <div class="bg-gradient-to-r from-amber-500 to-orange-600 text-white p-3 px-4 rounded-xl shadow-sm flex justify-between items-center text-xs md:text-sm">
+            <div class="flex items-center space-x-2">
+                <span class="bg-white text-orange-600 font-bold px-2 py-0.5 rounded text-[10px] uppercase tracking-wider">Featured Ad</span>
+                <span class="font-medium">eMalahleni Spaza Wholesale: Get 5% off bulk flour & oil today!</span>
             </div>
-          </div>
-          <button id="btn-submit-job" type="button" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow transition text-sm">Post Job to Driver Fleet</button>
-        </form>
-      </div>
-
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <h2 class="font-bold text-xl text-slate-800 mb-4">Available Delivery Requests</h2>
-        <div id="jobs-list" class="space-y-3">
-          <p class="text-slate-400 italic text-sm text-center py-4">Loading real-time jobs...</p>
+            <span class="text-orange-100 text-[10px] hidden sm:inline">Promoted via FleetLink Ad Network</span>
         </div>
-      </div>
-    </div>
 
-    <!-- VIEW 3: Driver KYC & Biometrics -->
-    <div id="view-drivers" class="space-y-6 hidden">
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <div class="flex justify-between items-center mb-1">
-          <h2 class="font-bold text-lg text-slate-900">Driver KYC & Biometric Verification</h2>
-          <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-md">ID & Face Scanner</span>
-        </div>
-        <p class="text-slate-500 text-xs mb-4">Upload your SA ID document and capture a face scan/selfie to pass platform security vetting.</p>
-        <form id="form-register-driver" onsubmit="return false;">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-            <input id="driver-name" type="text" placeholder="Full Name & Surname" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
-            <input id="driver-phone" type="text" placeholder="Phone Number (e.g. 082 123 4567)" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
-            <input id="driver-license" type="text" placeholder="License Code (e.g. Code B, Code A)" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
-            <input id="driver-vehicle" type="text" placeholder="Vehicle Reg / Plate (e.g. ND 123-456)" class="border border-slate-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
-            
+        <!-- Header -->
+        <header class="bg-slate-900 text-white p-6 rounded-2xl shadow-lg flex flex-wrap justify-between items-center gap-4">
             <div>
-              <label class="block text-[11px] font-bold text-slate-700 mb-1">📄 Upload SA ID / Passport Document:</label>
-              <input id="driver-id-file" type="file" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100" required>
+                <h1 class="text-2xl font-bold tracking-wide">FleetLink Core Console</h1>
+                <p class="text-slate-400 text-sm">eMalahleni Micro-Logistics Engine</p>
             </div>
-            <div>
-              <label class="block text-[11px] font-bold text-slate-700 mb-1">📷 Live Face Scanner / Selfie Capture:</label>
-              <input id="driver-face-file" type="file" accept="image/*" capture="user" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100" required>
+            <div id="safetyBadge" class="px-4 py-2 rounded-full text-xs font-bold tracking-wider uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                Route Clear
             </div>
-          </div>
-          <button id="btn-submit-driver" type="button" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow transition text-sm">Submit KYC & Biometric Profile</button>
-        </form>
-      </div>
+        </header>
 
-      <div>
-        <h2 class="font-bold text-xl text-slate-800 mb-4">Verified Fleet Driver Network</h2>
-        <div id="drivers-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <p class="text-slate-400 italic text-sm py-4 col-span-2 text-center">Loading driver profiles...</p>
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- Inputs Panel -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
+                <h2 class="text-lg font-bold text-gray-900 border-b pb-2">Delivery & Safety Config</h2>
+
+                <!-- Presets -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-500 mb-2">Merchant Presets</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="applyPreset(120, 80, 2)" class="text-xs py-2 px-3 bg-gray-100 hover:bg-slate-800 hover:text-white rounded-lg transition font-medium">Spaza Small</button>
+                        <button onclick="applyPreset(850, 600, 5)" class="text-xs py-2 px-3 bg-gray-100 hover:bg-slate-800 hover:text-white rounded-lg transition font-medium">Bakery Bulk</button>
+                        <button onclick="applyPreset(2200, 1700, 8)" class="text-xs py-2 px-3 bg-gray-100 hover:bg-slate-800 hover:text-white rounded-lg transition font-medium">Hardware</button>
+                    </div>
+                </div>
+
+                <!-- Product Price -->
+                <div>
+                    <label for="salePrice" class="block text-sm font-medium text-gray-700">Product Selling Price (R)</label>
+                    <input type="number" id="salePrice" value="500" class="w-full mt-1 p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-800 outline-none" oninput="calculate()">
+                </div>
+
+                <!-- Cost Price -->
+                <div>
+                    <label for="costPrice" class="block text-sm font-medium text-gray-700">Product Wholesale Cost (R)</label>
+                    <input type="number" id="costPrice" value="350" class="w-full mt-1 p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-800 outline-none" oninput="calculate()">
+                </div>
+
+                <!-- Distance -->
+                <div>
+                    <div class="flex justify-between items-center">
+                        <label for="distance" class="block text-sm font-medium text-gray-700">Delivery Distance</label>
+                        <span id="distanceVal" class="text-sm font-bold text-slate-900">4 km</span>
+                    </div>
+                    <input type="range" id="distance" min="1" max="25" value="4" class="w-full mt-2 accent-slate-800" oninput="calculate()">
+                </div>
+
+                <!-- Red Zone Toggle -->
+                <div class="p-4 rounded-xl border border-red-200 bg-red-50 flex items-center justify-between">
+                    <div>
+                        <span class="block text-sm font-bold text-red-900">Red Zone Warning</span>
+                        <span class="block text-xs text-red-700">Apply hazard surcharge for high-risk zones</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="isRedZone" class="sr-only peer" onchange="calculate()">
+                        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Breakdown & Dispatch Panel -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col justify-between space-y-4">
+                
+                <!-- Driver Pickup ETA Timer Card -->
+                <div class="p-4 rounded-xl bg-slate-100 border border-slate-200 space-y-1">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Driver Pickup ETA</span>
+                        <span id="etaStatus" class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-700">Calculating...</span>
+                    </div>
+                    <div class="flex items-baseline justify-between">
+                        <span id="outEta" class="text-2xl font-extrabold text-slate-900">-- mins</span>
+                        <span class="text-xs text-slate-500">Estimated pickup arrival</span>
+                    </div>
+                </div>
+
+                <!-- Financial Breakdown -->
+                <div>
+                    <h2 class="text-sm font-bold text-gray-900 border-b pb-2 uppercase tracking-wide">Order Breakdown</h2>
+
+                    <div class="space-y-2.5 mt-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Gross Sale:</span>
+                            <span id="outSale" class="font-bold text-gray-900">R0.00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Wholesale Product Cost:</span>
+                            <span id="outCost" class="text-red-600 font-medium">-R0.00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Driver Fee (Base R25 + Dist):</span>
+                            <span id="outDriver" class="text-red-600 font-medium">-R0.00</span>
+                        </div>
+                        <div id="hazardRow" class="flex justify-between hidden text-red-700 font-medium">
+                            <span>Hazard Risk Pay:</span>
+                            <span id="outHazard">-R0.00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">FleetLink Platform Fee (6%):</span>
+                            <span id="outFee" class="text-red-600 font-medium">-R0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Final Net Calculation -->
+                <div id="netBox" class="p-4 rounded-xl bg-slate-900 text-white space-y-1 transition-colors">
+                    <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold block">Merchant Net Profit</span>
+                    <div class="flex justify-between items-baseline">
+                        <span id="outNetProfit" class="text-3xl font-extrabold">R0.00</span>
+                        <span id="outMargin" class="text-xs font-bold px-2 py-1 rounded bg-slate-800 text-emerald-400">0% Margin</span>
+                    </div>
+                </div>
+            </div>
+
         </div>
-      </div>
     </div>
 
-  </div>
+    <script>
+        function calculate() {
+            const salePrice = parseFloat(document.getElementById('salePrice').value) || 0;
+            const costPrice = parseFloat(document.getElementById('costPrice').value) || 0;
+            const distance = parseInt(document.getElementById('distance').value) || 1;
+            const isRedZone = document.getElementById('isRedZone').checked;
 
-  <!-- Firebase Web SDK Modular CDN -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+            document.getElementById('distanceVal').innerText = distance + ' km';
 
-    const firebaseConfig = {
-      apiKey: "AiZaSyBqKLr7NLE-LbEj1585pylXFDQ68Apkzt8",
-      authDomain: "fleetlink-72aca.firebaseapp.com",
-      projectId: "fleetlink-72aca",
-      storageBucket: "fleetlink-72aca.firebasestorage.app",
-      messagingSenderId: "916900465251",
-      appId: "1:916900465251:web:ada068c18acd2e7bf54656",
-      measurementId: "G-6Q45BSQPXF"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    let map = null;
-    let driverMarker = null;
-
-    function initMap() {
-      if (map) return;
-      map = L.map('map').setView([-26.1025, 27.9785], 13);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(map);
-
-      L.marker([-26.1025, 27.9785]).addTo(map).bindPopup("<b>Cosmo Bakery</b><br>Pickup Station").openPopup();
-      L.marker([-26.0950, 27.9950]).addTo(map).bindPopup("<b>Customer Dropoff</b><br>Cosmo City Ext 2");
-
-      driverMarker = L.marker([-26.1010, 27.9820], {
-        icon: L.divIcon({
-          className: 'custom-icon',
-          html: '<div style="background-color:#059669; color:white; padding:4px 8px; border-radius:12px; font-weight:bold; font-size:10px; border:2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">🚚 Driver En-Route</div>',
-          iconSize: [100, 30]
-        })
-      }).addTo(map);
-    }
-
-    window.switchTab = function(view) {
-      const tabMerchants = document.getElementById("tab-merchants");
-      const tabJobs = document.getElementById("tab-jobs");
-      const tabDrivers = document.getElementById("tab-drivers");
-      const viewMerchants = document.getElementById("view-merchants");
-      const viewJobs = document.getElementById("view-jobs");
-      const viewDrivers = document.getElementById("view-drivers");
-
-      viewMerchants.classList.add("hidden");
-      viewJobs.classList.add("hidden");
-      viewDrivers.classList.add("hidden");
-      tabMerchants.className = "px-3 py-2 rounded-lg text-emerald-100 hover:text-white transition";
-      tabJobs.className = "px-3 py-2 rounded-lg text-emerald-100 hover:text-white transition";
-      tabDrivers.className = "px-3 py-2 rounded-lg text-emerald-100 hover:text-white transition";
-
-      if (view === 'merchants') {
-        viewMerchants.classList.remove("hidden");
-        tabMerchants.className = "px-3 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition";
-      } else if (view === 'jobs') {
-        viewJobs.classList.remove("hidden");
-        tabJobs.className = "px-3 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition";
-        setTimeout(() => {
-          initMap();
-          map.invalidateSize();
-        }, 200);
-      } else if (view === 'drivers') {
-        viewDrivers.classList.remove("hidden");
-        tabDrivers.className = "px-3 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition";
-      }
-    };
-
-    function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-      });
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      // Business Form Submit
-      const btnSubmitBiz = document.getElementById("btn-submit-biz");
-      if (btnSubmitBiz) {
-        btnSubmitBiz.addEventListener("click", async () => {
-          const name = document.getElementById("biz-name").value.trim();
-          const category = document.getElementById("biz-category").value.trim();
-          const location = document.getElementById("biz-location").value.trim();
-
-          if (!name || !location) {
-            alert("Please provide both a Business Name and Location address.");
-            return;
-          }
-
-          btnSubmitBiz.disabled = true;
-          btnSubmitBiz.innerText = "Registering...";
-
-          try {
-            await addDoc(collection(db, "businesses"), {
-              name: name,
-              category: category || "General Retail",
-              location: location,
-              status: "Accepting Orders",
-              plan: "Free Tier",
-              timestamp: new Date()
-            });
-
-            document.getElementById("biz-name").value = "";
-            document.getElementById("biz-category").value = "";
-            document.getElementById("biz-location").value = "";
-          } catch (err) {
-            console.error("Firestore Error: ", err);
-          } finally {
-            btnSubmitBiz.disabled = false;
-            btnSubmitBiz.innerText = "Register Business";
-          }
-        });
-      }
-
-      // Job Submit with Tiered Vehicle Pricing
-      const btnSubmitJob = document.getElementById("btn-submit-job");
-      if (btnSubmitJob) {
-        btnSubmitJob.addEventListener("click", async () => {
-          const merchant = document.getElementById("job-merchant").value.trim();
-          const pickup = document.getElementById("job-pickup").value.trim();
-          const dropoff = document.getElementById("job-dropoff").value.trim();
-          const item = document.getElementById("job-item").value.trim();
-          const tier = document.getElementById("job-vehicle-tier").value;
-
-          if (!merchant || !pickup || !dropoff) {
-            alert("Please fill in merchant name, pickup, and dropoff fields.");
-            return;
-          }
-
-          let totalFee = 150;
-          let driverPayout = 140;
-          let platformFee = 10;
-          let vehicleType = "Motorcycle / Scooter";
-
-          if (tier === 'bakkie') {
-            totalFee = 350;
-            driverPayout = 320;
-            platformFee = 30;
-            vehicleType = "Light Bakkie / Van (Wholesale)";
-          }
-
-          btnSubmitJob.disabled = true;
-          btnSubmitJob.innerText = "Dispatching...";
-          const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
-
-          try {
-            await addDoc(collection(db, "deliveries"), {
-              merchant: merchant,
-              pickup: pickup,
-              dropoff: dropoff,
-              item: item || "General Goods",
-              vehicleType: vehicleType,
-              status: "Available",
-              otpCode: generatedOtp,
-              totalFee: totalFee,
-              driverPayout: driverPayout,
-              platformFee: platformFee,
-              timestamp: new Date()
-            });
-
-            document.getElementById("job-merchant").value = "";
-            document.getElementById("job-pickup").value = "";
-            document.getElementById("job-dropoff").value = "";
-            document.getElementById("job-item").value = "";
-          } catch (err) {
-            console.error("Job Submit Error: ", err);
-          } finally {
-            btnSubmitJob.disabled = false;
-            btnSubmitJob.innerText = "Post Job to Driver Fleet";
-          }
-        });
-      }
-
-      // Driver KYC Submit
-      const btnSubmitDriver = document.getElementById("btn-submit-driver");
-      if (btnSubmitDriver) {
-        btnSubmitDriver.addEventListener("click", async () => {
-          const name = document.getElementById("driver-name").value.trim();
-          const phone = document.getElementById("driver-phone").value.trim();
-          const license = document.getElementById("driver-license").value.trim();
-          const vehicle = document.getElementById("driver-vehicle").value.trim();
-          const idFile = document.getElementById("driver-id-file").files[0];
-          const faceFile = document.getElementById("driver-face-file").files[0];
-
-          if (!name || !phone || !license || !vehicle || !idFile || !faceFile) {
-            alert("Please complete all fields and attach both ID document and face scan.");
-            return;
-          }
-
-          btnSubmitDriver.disabled = true;
-          btnSubmitDriver.innerText = "Processing Biometric KYC...";
-
-          try {
-            const idBase64 = await fileToBase64(idFile);
-            const faceBase64 = await fileToBase64(faceFile);
-
-            await addDoc(collection(db, "drivers"), {
-              name: name,
-              phone: phone,
-              licenseCode: license,
-              vehicleReg: vehicle,
-              idImage: idBase64,
-              faceImage: faceBase64,
-              rating: 5.0,
-              completedJobs: 0,
-              tier: "Restricted Tier (Pending Admin Review)",
-              timestamp: new Date()
-            });
-
-            document.getElementById("form-register-driver").reset();
-          } catch (err) {
-            console.error("Driver KYC Biometric Error: ", err);
-            alert("Error uploading images. Please try smaller files.");
-          } finally {
-            btnSubmitDriver.disabled = false;
-            btnSubmitDriver.innerText = "Submit KYC & Biometric Profile";
-          }
-        });
-      }
-    });
-
-    // Real-Time Listener: Businesses
-    onSnapshot(collection(db, "businesses"), (snapshot) => {
-      const list = document.getElementById("merchants-list");
-      if (!list) return;
-      list.innerHTML = "";
-
-      if (snapshot.empty) {
-        list.innerHTML = `<p class="text-slate-500 bg-white p-6 rounded-xl border col-span-2 text-center text-sm font-medium">No businesses registered yet. Add the first business above!</p>`;
-        return;
-      }
-
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        const docId = docSnap.id;
-        const isOnline = data.status !== 'Offline';
-        const isPro = data.plan === 'Pro Tier (R199/mo)';
-
-        const card = document.createElement("div");
-        card.className = "p-5 border border-slate-200 rounded-xl bg-white shadow-sm hover:border-emerald-300 transition space-y-3";
-        card.innerHTML = `
-          <div class="flex justify-between items-start">
-            <div>
-              <div class="flex items-center gap-2">
-                <h3 class="font-bold text-slate-900 text-base">${data.name || 'Unnamed Shop'}</h3>
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${isPro ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-100 text-slate-600'}">
-                  ${isPro ? '⭐ PRO (R199/mo)' : 'Free Tier'}
-                </span>
-              </div>
-              <span class="text-xs text-slate-500 font-medium">${data.category || 'Retail Outlet'}</span>
-            </div>
-            <button class="btn-toggle-status text-xs font-bold px-3 py-1 rounded-full transition ${isOnline ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
-              ${isOnline ? '🟢 Accepting Orders' : '⚪ Offline'}
-            </button>
-          </div>
-
-          <p class="text-xs text-slate-600">📍 <b>Hub Location:</b> ${data.location || 'Johannesburg'}</p>
-
-          <div class="flex gap-2">
-            <button class="btn-quick-dispatch flex-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 rounded-lg transition">Request Pickup</button>
-            <button class="btn-toggle-plan text-[11px] font-semibold px-2.5 py-2 border rounded-lg hover:bg-slate-50 text-slate-700">
-              ${isPro ? 'Downgrade' : 'Upgrade Pro'}
-            </button>
-          </div>
-        `;
-
-        card.querySelector(".btn-toggle-status").addEventListener("click", async () => {
-          const nextStatus = isOnline ? 'Offline' : 'Accepting Orders';
-          await updateDoc(doc(db, "businesses", docId), { status: nextStatus });
-        });
-
-        card.querySelector(".btn-toggle-plan").addEventListener("click", async () => {
-          const nextPlan = isPro ? 'Free Tier' : 'Pro Tier (R199/mo)';
-          await updateDoc(doc(db, "businesses", docId), { plan: nextPlan });
-        });
-
-        card.querySelector(".btn-quick-dispatch").addEventListener("click", () => {
-          window.switchTab('jobs');
-          document.getElementById("job-merchant").value = data.name || '';
-          document.getElementById("job-pickup").value = data.location || '';
-        });
-
-        list.appendChild(card);
-      });
-    });
-
-    // Real-Time Listener: Drivers Network
-    onSnapshot(collection(db, "drivers"), (snapshot) => {
-      const list = document.getElementById("drivers-list");
-      if (!list) return;
-      list.innerHTML = "";
-
-      if (snapshot.empty) {
-        list.innerHTML = `<p class="text-slate-500 bg-white p-6 rounded-xl border col-span-2 text-center text-sm font-medium">No drivers registered yet. Submit a KYC profile above!</p>`;
-        return;
-      }
-
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        const docId = docSnap.id;
-        const isVerified = data.tier === 'Fully Vetted & Verified Tier';
-
-        const card = document.createElement("div");
-        card.className = "p-5 border border-slate-200 rounded-xl bg-white shadow-sm hover:border-emerald-300 transition space-y-3";
-        card.innerHTML = `
-          <div class="flex justify-between items-start">
-            <div class="flex items-center gap-3">
-              ${data.faceImage ? `<img src="${data.faceImage}" class="w-12 h-12 rounded-full object-cover border-2 border-emerald-500 shadow-sm" alt="Face Scan">` : `<div class="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600">👤</div>`}
-              <div>
-                <h3 class="font-bold text-slate-900 text-base">${data.name}</h3>
-                <p class="text-xs text-slate-500">📞 ${data.phone}</p>
-              </div>
-            </div>
-            <button class="btn-toggle-tier text-[11px] font-bold px-2.5 py-1 rounded transition ${isVerified ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
-              ${isVerified ? '✓ Verified Tier' : '⏳ Restricted Tier'}
-            </button>
-          </div>
-
-          <div class="text-xs text-slate-600 space-y-1 border-t border-slate-100 pt-2">
-            <p>🆔 <b>License Code:</b> ${data.licenseCode}</p>
-            <p>🚙 <b>Vehicle Reg:</b> ${data.vehicleReg}</p>
-            <p>⭐ <b>Rating:</b> ${data.rating} / 5.0 (${data.completedJobs || 0} jobs completed)</p>
-          </div>
-
-          ${data.idImage ? `
-            <div class="bg-slate-50 p-2 rounded-lg border border-slate-200 flex items-center justify-between text-xs">
-              <span class="font-bold text-slate-700">📄 SA ID Document Attached</span>
-              <a href="${data.idImage}" target="_blank" class="text-emerald-700 font-bold hover:underline">View ID Scan ↗</a>
-            </div>
-          ` : ''}
-
-          <div class="flex gap-2 pt-1">
-            <button class="btn-verify-driver flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 rounded transition">
-              ${isVerified ? 'Revoke Vetting' : 'Approve & Verify Driver'}
-            </button>
-            <button class="btn-delete-driver text-slate-400 hover:text-red-600 text-xs font-bold px-2 py-1.5 border rounded transition" title="Remove Driver">🗑️</button>
-          </div>
-        `;
-
-        card.querySelector(".btn-verify-driver").addEventListener("click", async () => {
-          const nextTier = isVerified ? 'Restricted Tier (Pending Admin Review)' : 'Fully Vetted & Verified Tier';
-          await updateDoc(doc(db, "drivers", docId), { tier: nextTier });
-        });
-
-        card.querySelector(".btn-delete-driver").addEventListener("click", async () => {
-          if (confirm("Are you sure you want to remove this driver profile?")) {
-            await deleteDoc(doc(db, "drivers", docId));
-          }
-        });
-
-        list.appendChild(card);
-      });
-    });
-
-    // Real-Time Listener: Deliveries Feed with Photo POD & OTP Handover
-    onSnapshot(collection(db, "deliveries"), (snapshot) => {
-      const list = document.getElementById("jobs-list");
-      if (!list) return;
-      list.innerHTML = "";
-
-      if (snapshot.empty) {
-        list.innerHTML = `<p class="text-slate-500 bg-slate-50 p-6 rounded-xl border text-center text-sm font-medium">No active delivery requests right now.</p>`;
-        return;
-      }
-
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        const docId = docSnap.id;
-        const status = data.status || 'Available';
-        const isAvailable = status === 'Available';
-        const isInTransit = status === 'In Transit';
-        const isCompleted = status === 'Completed';
-        const otp = data.otpCode || '4829';
-        const vehicle = data.vehicleType || 'Motorcycle / Scooter';
-        const payout = data.driverPayout || 140;
-
-        const card = document.createElement("div");
-        card.className = "p-4 border border-slate-200 rounded-xl bg-slate-50 hover:border-emerald-300 transition shadow-sm space-y-3";
-        card.innerHTML = `
-          <div class="flex justify-between items-start">
-            <div>
-              <span class="font-bold text-slate-900">${data.merchant}</span>
-              <div class="text-xs text-emerald-700 font-semibold mt-0.5">
-                Payout: <span class="font-black text-slate-900">R${payout}</span> <span class="text-[10px] text-slate-500 font-normal">(${vehicle})</span>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-bold px-2.5 py-1 rounded-full ${isAvailable ? 'bg-emerald-100 text-emerald-800' : (isInTransit ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-800')}">
-                ${status}
-              </span>
-              <button class="btn-delete-job text-slate-400 hover:text-red-600 text-xs font-bold p-1 transition" title="Delete Request">🗑️</button>
-            </div>
-          </div>
-
-          <p class="text-sm font-semibold text-slate-700">📦 ${data.item}</p>
-
-          <div class="text-xs text-slate-500 space-y-0.5 border-t border-slate-200/60 pt-2">
-            <p>📍 <b>Pickup:</b> ${data.pickup}</p>
-            <p>🎯 <b>Dropoff:</b> ${data.dropoff}</p>
-            <p class="text-[11px] text-slate-400 mt-1">🔒 <b>Security:</b> ${isCompleted ? 'Verified with Photo POD & OTP' : 'Geofenced OTP & Photo POD Required'}</p>
-          </div>
-
-          ${isAvailable ? `
-            <button class="btn-claim-job w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 rounded-lg transition">Accept Job (Secure Escrow R${payout})</button>
-          ` : ''}
-
-          ${isInTransit ? `
-            <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg space-y-3">
-              <p class="text-xs font-bold text-amber-900">🔒 Proof of Delivery (POD) & OTP Handover</p>
-              <p class="text-[11px] text-amber-700">Attach delivery drop-off photo and enter 4-digit buyer PIN to complete order:</p>
-              
-              <div>
-                <label class="block text-[10px] font-bold text-amber-800 mb-1">📸 Drop-off Photo Proof:</label>
-                <input type="file" accept="image/*" capture="environment" class="input-pod-file w-full text-xs text-slate-600 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-bold file:bg-amber-100 file:text-amber-800">
-              </div>
-
-              <div class="flex gap-2">
-                <input type="text" placeholder="Enter PIN (e.g. ${otp})" class="input-otp border border-amber-300 p-1.5 rounded text-xs w-full focus:outline-none focus:ring-1 focus:ring-amber-500">
-                <button class="btn-verify-otp bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">Verify</button>
-              </div>
-            </div>
-          ` : ''}
-
-          ${isCompleted ? `
-            <div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded-lg text-xs font-bold text-emerald-800 text-center">
-              ✓ Delivery Verified via OTP & Photo POD • R${payout} Released
-            </div>
-          ` : ''}
-        `;
-
-        if (isAvailable) {
-          card.querySelector(".btn-claim-job").addEventListener("click", async () => {
-            await updateDoc(doc(db, "deliveries", docId), { status: "In Transit" });
-          });
-        }
-
-        if (isInTransit) {
-          card.querySelector(".btn-verify-otp").addEventListener("click", async () => {
-            const inputVal = card.querySelector(".input-otp").value.trim();
-            const podFile = card.querySelector(".input-pod-file").files[0];
-
-            if (!podFile) {
-              alert("Please attach a proof of delivery photo before completing the job!");
-              return;
+            // ETA Calculation: Base 5 mins dispatch + 3 mins per km + 3 mins if Red Zone
+            let etaMinutes = 5 + (distance * 3);
+            if (isRedZone) {
+                etaMinutes += 3; // Safety routing delay
             }
 
-            if (inputVal === otp || inputVal === '4829') {
-              const podBase64 = await fileToBase64(podFile);
-              await updateDoc(doc(db, "deliveries", docId), { 
-                status: "Completed",
-                podImage: podBase64 
-              });
+            document.getElementById('outEta').innerText = '~' + etaMinutes + ' mins';
+            document.getElementById('etaStatus').innerText = distance <= 3 ? 'Fast Pickup' : 'Standard Delivery';
+
+            // Driver Fee Logic: Base R25 minimum threshold, +R5/km past 3km
+            const baseDriverFee = 25;
+            const extraKm = Math.max(0, distance - 3);
+            let driverFee = baseDriverFee + (extraKm * 5);
+
+            // Red Zone Hazard Surcharge (+R15 flat driver compensation)
+            let hazardPay = 0;
+            if (isRedZone) {
+                hazardPay = 15;
+                document.getElementById('hazardRow').classList.remove('hidden');
+                document.getElementById('safetyBadge').className = 'px-4 py-2 rounded-full text-xs font-bold tracking-wider uppercase bg-red-500/20 text-red-400 border border-red-500/30 red-zone-pulse';
+                document.getElementById('safetyBadge').innerText = 'Red Zone Active';
             } else {
-              alert(`Incorrect OTP code! For demo testing, enter code: ${otp}`);
+                document.getElementById('hazardRow').classList.add('hidden');
+                document.getElementById('safetyBadge').className = 'px-4 py-2 rounded-full text-xs font-bold tracking-wider uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                document.getElementById('safetyBadge').innerText = 'Route Clear';
             }
-          });
+
+            const totalDriverPayout = driverFee + hazardPay;
+
+            // Platform Commission (6% of gross order value)
+            const platformFee = salePrice * 0.06;
+
+            // Net Merchant Profit
+            const netProfit = salePrice - costPrice - totalDriverPayout - platformFee;
+            const margin = salePrice > 0 ? ((netProfit / salePrice) * 100).toFixed(1) : 0;
+
+            // UI Render
+            document.getElementById('outSale').innerText = 'R' + salePrice.toFixed(2);
+            document.getElementById('outCost').innerText = '-R' + costPrice.toFixed(2);
+            document.getElementById('outDriver').innerText = '-R' + driverFee.toFixed(2);
+            document.getElementById('outHazard').innerText = '-R' + hazardPay.toFixed(2);
+            document.getElementById('outFee').innerText = '-R' + platformFee.toFixed(2);
+            document.getElementById('outNetProfit').innerText = 'R' + netProfit.toFixed(2);
+            document.getElementById('outMargin').innerText = margin + '% Margin';
+
+            const netBox = document.getElementById('netBox');
+            if (netProfit < 0) {
+                netBox.className = 'p-4 rounded-xl bg-red-950 text-white space-y-1 transition-colors';
+                document.getElementById('outMargin').className = 'text-xs font-bold px-2 py-1 rounded bg-red-900 text-red-300';
+            } else {
+                netBox.className = 'p-4 rounded-xl bg-slate-900 text-white space-y-1 transition-colors';
+                document.getElementById('outMargin').className = 'text-xs font-bold px-2 py-1 rounded bg-slate-800 text-emerald-400';
+            }
         }
 
-        card.querySelector(".btn-delete-job").addEventListener("click", async () => {
-          if (confirm("Are you sure you want to delete this delivery request?")) {
-            await deleteDoc(doc(db, "deliveries", docId));
-          }
-        });
+        function applyPreset(sale, cost, dist) {
+            document.getElementById('salePrice').value = sale;
+            document.getElementById('costPrice').value = cost;
+            document.getElementById('distance').value = dist;
+            calculate();
+        }
 
-        list.appendChild(card);
-      });
-    });
-  </script>
+        // Initialize calculation on page load
+        calculate();
+    </script>
 </body>
 </html>
