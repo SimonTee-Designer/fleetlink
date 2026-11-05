@@ -4,7 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FleetLink Unified Platform</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet CSS & JS for Interactive Map & Geofencing -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        #map { height: 260px; width: 100%; border-radius: 0.5rem; z-index: 1; }
+    </style>
 </head>
 <body class="bg-white text-emerald-950 min-h-screen p-4 md:p-8 font-sans">
     <div class="max-w-4xl mx-auto space-y-8">
@@ -13,7 +20,7 @@
         <header class="flex justify-between items-center border-b border-emerald-200 pb-4">
             <div>
                 <h1 class="text-2xl font-bold text-emerald-800">FleetLink</h1>
-                <p class="text-emerald-700 text-sm">Unified Merchant & Driver Console</p>
+                <p class="text-emerald-700 text-sm">Unified Merchant & Driver Logistics Console</p>
             </div>
             <span class="bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs px-3 py-1 rounded font-medium">System Online</span>
         </header>
@@ -61,21 +68,24 @@
                     </div>
                 </section>
 
-                <!-- 2. Safety, Red Zone & PIN Escrow Engine -->
+                <!-- 2. Safety, Red Zone Map Geofence & Escrow Engine -->
                 <section class="bg-white border border-emerald-300 p-5 rounded-xl space-y-4 shadow-sm">
-                    <h2 class="text-lg font-semibold text-emerald-900">2. Safety & Risk Engine</h2>
+                    <h2 class="text-lg font-semibold text-emerald-900">2. Safety & Geofenced Risk Engine</h2>
                     
+                    <!-- Interactive Leaflet Map -->
+                    <div id="map"></div>
+
                     <div class="flex items-center justify-between p-3 bg-emerald-50 rounded border border-emerald-200">
                         <div>
-                            <p class="font-medium text-sm text-emerald-900">Red Zone High-Risk Area Pinpoint</p>
+                            <p class="font-medium text-sm text-emerald-900">Red Zone Geofence Detected</p>
                             <p class="text-xs text-emerald-700">Applies +R15 driver hazard surcharge</p>
                         </div>
-                        <input id="redZoneToggle" type="checkbox" onchange="calculateProfit()" class="w-5 h-5 accent-emerald-700 cursor-pointer">
+                        <input id="redZoneToggle" type="checkbox" onchange="manualToggleRedZone()" class="w-5 h-5 accent-emerald-700 cursor-pointer">
                     </div>
 
                     <div id="redZoneAlert" class="hidden p-3 bg-red-50 border border-red-200 rounded text-red-700 text-xs space-y-1">
-                        <p class="font-bold">⚠️ Red Zone Pinpointed & Activated</p>
-                        <p>Dynamic pickup timer set to 15 mins max. R15 hazard bonus assigned to driver payout.</p>
+                        <p class="font-bold">⚠️ Red Zone Pinpointed on Map</p>
+                        <p>Dynamic pickup timer capped at 15 mins. R15 hazard bonus assigned to driver payout.</p>
                     </div>
 
                     <!-- 4-Digit PIN Escrow -->
@@ -124,14 +134,14 @@
                             <div>
                                 <span class="text-xs text-emerald-700 font-bold">JOB #FL-104</span>
                                 <h3 class="font-bold text-emerald-950">Wholesale Spaza Order</h3>
-                                <p class="text-xs text-emerald-700">Pickup: Cosmo Mall Wholesale -> Dropoff: Block 3</p>
+                                <p class="text-xs text-emerald-700">Pickup: Store Hub -> Dropoff: Selected Pin</p>
                             </div>
-                            <span class="text-emerald-800 font-bold text-lg" id="driverPayoutDisplay">R40.00</span>
+                            <span class="text-emerald-800 font-bold text-lg" id="driverPayoutDisplay">R25.00</span>
                         </div>
                         
                         <div class="flex justify-between text-xs text-emerald-700 pt-2 border-t border-emerald-200">
                             <span>Distance: <strong class="text-emerald-950" id="driverDistDisplay">2 km</strong></span>
-                            <span>Pickup ETA Timer: <strong class="text-emerald-950" id="driverEtaDisplay">4 mins</strong></span>
+                            <span>Pickup ETA Timer: <strong class="text-emerald-950" id="driverEtaDisplay">6 mins</strong></span>
                             <span>Hazard Bonus: <strong class="text-emerald-950" id="driverHazardDisplay">R0.00</strong></span>
                         </div>
 
@@ -161,8 +171,63 @@
 
     </div>
 
-    <!-- Combined Interactive Logic -->
+    <!-- Script Section: Map Geofencing & Calculations -->
     <script>
+        // 1. Initialize Leaflet Map centered around a township area
+        const map = L.map('map').setView([-25.9812, 27.9124], 14);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Define a Red Zone Polygon Boundary
+        const redZoneCoords = [
+            [-25.9780, 27.9050],
+            [-25.9780, 27.9200],
+            [-25.9880, 27.9200],
+            [-25.9880, 27.9050]
+        ];
+
+        // Draw Red Zone Overlay on Map
+        const redZonePolygon = L.polygon(redZoneCoords, {
+            color: 'red',
+            fillColor: '#f03',
+            fillOpacity: 0.35
+        }).addTo(map);
+
+        redZonePolygon.bindTooltip("<b>⚠️ Red Zone Hazard Area</b><br>+R15 Surcharge Applies", { permanent: false });
+
+        // Add a draggable Dropoff Pin
+        let dropoffMarker = L.marker([-25.9850, 27.9100], { draggable: true }).addTo(map);
+        dropoffMarker.bindPopup("<b>Dropoff Location</b><br>Drag to test Geofence!").openPopup();
+
+        // Ray-Casting Algorithm to Check if Point is inside Polygon
+        function checkGeofence(lat, lng) {
+            let inside = false;
+            for (let i = 0, j = redZoneCoords.length - 1; i < redZoneCoords.length; j = i++) {
+                let xi = redZoneCoords[i][0], yi = redZoneCoords[i][1];
+                let xj = redZoneCoords[j][0], yj = redZoneCoords[j][1];
+
+                let intersect = ((yi > lng) !== (yj > lng)) &&
+                    (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+
+        // Handle Map Pin Drag Event
+        dropoffMarker.on('dragend', function (e) {
+            const position = dropoffMarker.getLatLng();
+            const isInside = checkGeofence(position.lat, position.lng);
+            
+            document.getElementById('redZoneToggle').checked = isInside;
+            calculateProfit();
+        });
+
+        function manualToggleRedZone() {
+            calculateProfit();
+        }
+
         function calculateProfit() {
             const wholesale = parseFloat(document.getElementById('wholesaleCost').value) || 0;
             const selling = parseFloat(document.getElementById('sellingPrice').value) || 0;
@@ -178,16 +243,16 @@
             let hazardBonus = isRedZone ? 15 : 0;
             let totalDeliveryFee = baseDelivery + hazardBonus;
 
-            // Pickup ETA Timer Calculation (approx 2 mins per km, max 15 mins if Red Zone)
+            // ETA Timer: 2 mins per km, capped at 15 mins if Red Zone
             let etaMinutes = Math.min(Math.ceil(distance * 2) + 2, 15);
             if (isRedZone) {
-                etaMinutes = 15; // Red zone fixed secure timer cap
+                etaMinutes = 15;
                 document.getElementById('redZoneAlert').classList.remove('hidden');
             } else {
                 document.getElementById('redZoneAlert').classList.add('hidden');
             }
 
-            // Platform fee: 10% of selling price
+            // Platform fee: 10%
             const platformFee = selling * 0.10;
 
             // Net Merchant Profit
@@ -198,7 +263,7 @@
             document.getElementById('platformFeeDisplay').innerText = `R${platformFee.toFixed(2)}`;
             document.getElementById('netProfitDisplay').innerText = `R${netProfit.toFixed(2)}`;
 
-            // Update Driver UI live based on merchant inputs
+            // Update Driver UI
             document.getElementById('driverPayoutDisplay').innerText = `R${totalDeliveryFee.toFixed(2)}`;
             document.getElementById('driverDistDisplay').innerText = `${distance} km`;
             document.getElementById('driverEtaDisplay').innerText = `${etaMinutes} mins`;
@@ -228,7 +293,7 @@
             driverStatus.className = "text-xs bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-1 rounded font-bold";
         }
 
-        // Run initial calculation
+        // Run initial calculation on page load
         calculateProfit();
     </script>
 </body>
