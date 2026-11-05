@@ -3,223 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FleetLink | Merchant Profit & Safety Engine</title>
+    <title>FleetLink Merchant Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        .red-zone-pulse {
-            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-    </style>
 </head>
-<body class="bg-gray-100 min-h-screen text-gray-800 p-4 md:p-8">
-
+<body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 font-sans">
     <div class="max-w-4xl mx-auto space-y-6">
         
-        <!-- Local Merchant Ad Banner -->
-        <div class="bg-gradient-to-r from-amber-500 to-orange-600 text-white p-3 px-4 rounded-xl shadow-sm flex justify-between items-center text-xs md:text-sm">
-            <div class="flex items-center space-x-2">
-                <span class="bg-white text-orange-600 font-bold px-2 py-0.5 rounded text-[10px] uppercase tracking-wider">Featured Ad</span>
-                <span class="font-medium">eMalahleni Spaza Wholesale: Get 5% off bulk flour & oil today!</span>
-            </div>
-            <span class="text-orange-100 text-[10px] hidden sm:inline">Promoted via FleetLink Ad Network</span>
-        </div>
-
         <!-- Header -->
-        <header class="bg-slate-900 text-white p-6 rounded-2xl shadow-lg flex flex-wrap justify-between items-center gap-4">
+        <header class="flex justify-between items-center border-b border-slate-800 pb-4">
             <div>
-                <h1 class="text-2xl font-bold tracking-wide">FleetLink Core Console</h1>
-                <p class="text-slate-400 text-sm">eMalahleni Micro-Logistics Engine</p>
+                <h1 class="text-2xl font-bold text-amber-500">FleetLink Merchant</h1>
+                <p class="text-slate-400 text-sm">Store Profit, Order Escrow & Logistics Console</p>
             </div>
-            <div id="safetyBadge" class="px-4 py-2 rounded-full text-xs font-bold tracking-wider uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                Route Clear
-            </div>
+            <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs px-3 py-1 rounded-full font-medium">System Online</span>
         </header>
 
         <!-- Main Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            <!-- Inputs Panel -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
-                <h2 class="text-lg font-bold text-gray-900 border-b pb-2">Delivery & Safety Config</h2>
-
-                <!-- Presets -->
-                <div>
-                    <label class="block text-xs font-semibold uppercase text-gray-500 mb-2">Merchant Presets</label>
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="applyPreset(120, 80, 2)" class="text-xs py-2 px-3 bg-gray-100 hover:bg-slate-800 hover:text-white rounded-lg transition font-medium">Spaza Small</button>
-                        <button onclick="applyPreset(850, 600, 5)" class="text-xs py-2 px-3 bg-gray-100 hover:bg-slate-800 hover:text-white rounded-lg transition font-medium">Bakery Bulk</button>
-                        <button onclick="applyPreset(2200, 1700, 8)" class="text-xs py-2 px-3 bg-gray-100 hover:bg-slate-800 hover:text-white rounded-lg transition font-medium">Hardware</button>
-                    </div>
-                </div>
-
-                <!-- Product Price -->
-                <div>
-                    <label for="salePrice" class="block text-sm font-medium text-gray-700">Product Selling Price (R)</label>
-                    <input type="number" id="salePrice" value="500" class="w-full mt-1 p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-800 outline-none" oninput="calculate()">
-                </div>
-
-                <!-- Cost Price -->
-                <div>
-                    <label for="costPrice" class="block text-sm font-medium text-gray-700">Product Wholesale Cost (R)</label>
-                    <input type="number" id="costPrice" value="350" class="w-full mt-1 p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-800 outline-none" oninput="calculate()">
-                </div>
-
-                <!-- Distance -->
-                <div>
-                    <div class="flex justify-between items-center">
-                        <label for="distance" class="block text-sm font-medium text-gray-700">Delivery Distance</label>
-                        <span id="distanceVal" class="text-sm font-bold text-slate-900">4 km</span>
-                    </div>
-                    <input type="range" id="distance" min="1" max="25" value="4" class="w-full mt-2 accent-slate-800" oninput="calculate()">
-                </div>
-
-                <!-- Red Zone Toggle -->
-                <div class="p-4 rounded-xl border border-red-200 bg-red-50 flex items-center justify-between">
-                    <div>
-                        <span class="block text-sm font-bold text-red-900">Red Zone Warning</span>
-                        <span class="block text-xs text-red-700">Apply hazard surcharge for high-risk zones</span>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="isRedZone" class="sr-only peer" onchange="calculate()">
-                        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Breakdown & Dispatch Panel -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col justify-between space-y-4">
+            
+            <!-- Profit Margin Calculator -->
+            <section class="bg-slate-800 border border-slate-700 p-5 rounded-xl space-y-4">
+                <h2 class="text-lg font-semibold text-slate-200">1. Profit Margin Calculator</h2>
                 
-                <!-- Driver Pickup ETA Timer Card -->
-                <div class="p-4 rounded-xl bg-slate-100 border border-slate-200 space-y-1">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Driver Pickup ETA</span>
-                        <span id="etaStatus" class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-700">Calculating...</span>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Wholesale Cost (ZAR)</label>
+                        <input id="wholesaleCost" type="number" value="100" oninput="calculateProfit()" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-amber-400 focus:outline-none focus:border-amber-500">
                     </div>
-                    <div class="flex items-baseline justify-between">
-                        <span id="outEta" class="text-2xl font-extrabold text-slate-900">-- mins</span>
-                        <span class="text-xs text-slate-500">Estimated pickup arrival</span>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Selling Price (ZAR)</label>
+                        <input id="sellingPrice" type="number" value="150" oninput="calculateProfit()" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-amber-400 focus:outline-none focus:border-amber-500">
                     </div>
-                </div>
-
-                <!-- Financial Breakdown -->
-                <div>
-                    <h2 class="text-sm font-bold text-gray-900 border-b pb-2 uppercase tracking-wide">Order Breakdown</h2>
-
-                    <div class="space-y-2.5 mt-3 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Gross Sale:</span>
-                            <span id="outSale" class="font-bold text-gray-900">R0.00</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Wholesale Product Cost:</span>
-                            <span id="outCost" class="text-red-600 font-medium">-R0.00</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Driver Fee (Base R25 + Dist):</span>
-                            <span id="outDriver" class="text-red-600 font-medium">-R0.00</span>
-                        </div>
-                        <div id="hazardRow" class="flex justify-between hidden text-red-700 font-medium">
-                            <span>Hazard Risk Pay:</span>
-                            <span id="outHazard">-R0.00</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">FleetLink Platform Fee (6%):</span>
-                            <span id="outFee" class="text-red-600 font-medium">-R0.00</span>
-                        </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Delivery Distance (km)</label>
+                        <input id="distance" type="number" value="2" oninput="calculateProfit()" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-amber-400 focus:outline-none focus:border-amber-500">
                     </div>
                 </div>
 
-                <!-- Final Net Calculation -->
-                <div id="netBox" class="p-4 rounded-xl bg-slate-900 text-white space-y-1 transition-colors">
-                    <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold block">Merchant Net Profit</span>
-                    <div class="flex justify-between items-baseline">
-                        <span id="outNetProfit" class="text-3xl font-extrabold">R0.00</span>
-                        <span id="outMargin" class="text-xs font-bold px-2 py-1 rounded bg-slate-800 text-emerald-400">0% Margin</span>
+                <div class="pt-3 border-t border-slate-700 space-y-2 text-sm">
+                    <div class="flex justify-between text-slate-400">
+                        <span>Base Delivery Fee (R25 + R5/km over 3km):</span>
+                        <span id="deliveryFeeDisplay" class="text-slate-200 font-medium">R25.00</span>
+                    </div>
+                    <div class="flex justify-between text-slate-400">
+                        <span>FleetLink Platform Fee (10%):</span>
+                        <span id="platformFeeDisplay" class="text-slate-200 font-medium">R15.00</span>
+                    </div>
+                    <div class="flex justify-between text-lg font-bold pt-2 border-t border-slate-700">
+                        <span class="text-slate-200">Net Merchant Profit:</span>
+                        <span id="netProfitDisplay" class="text-emerald-400">R35.00</span>
                     </div>
                 </div>
-            </div>
+            </section>
 
+            <!-- Red Zone Safety Engine -->
+            <section class="bg-slate-800 border border-slate-700 p-5 rounded-xl space-y-4">
+                <h2 class="text-lg font-semibold text-slate-200">2. Safety & Risk Engine</h2>
+                
+                <div class="flex items-center justify-between p-3 bg-slate-900 rounded border border-slate-700">
+                    <div>
+                        <p class="font-medium text-sm text-slate-200">Red Zone High-Risk Delivery</p>
+                        <p class="text-xs text-slate-400">Applies +R15 driver hazard surcharge</p>
+                    </div>
+                    <input id="redZoneToggle" type="checkbox" onchange="calculateProfit()" class="w-5 h-5 accent-amber-500 cursor-pointer">
+                </div>
+
+                <div id="redZoneAlert" class="hidden p-3 bg-rose-500/10 border border-rose-500/30 rounded text-rose-400 text-xs space-y-1">
+                    <p class="font-bold">⚠️ Red Zone Activated</p>
+                    <p>Dynamic pickup timer set to 15 mins max. R15 hazard bonus assigned to driver payout.</p>
+                </div>
+
+                <!-- PIN Verification Escrow -->
+                <div class="pt-4 border-t border-slate-700 space-y-3">
+                    <h3 class="text-sm font-semibold text-slate-300">4-Digit PIN Handover Verification</h3>
+                    <div class="flex gap-2">
+                        <input id="pinInput" type="text" maxlength="4" placeholder="Enter 4-digit PIN" class="flex-1 bg-slate-900 border border-slate-700 rounded p-2 text-center text-lg font-mono tracking-widest text-amber-400 focus:outline-none">
+                        <button onclick="verifyPin()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded transition">Verify</button>
+                    </div>
+                    <p id="pinStatus" class="text-xs text-slate-400 text-center"></p>
+                </div>
+            </section>
         </div>
+
+        <!-- Ad Network Section -->
+        <section class="bg-slate-800 border border-slate-700 p-5 rounded-xl space-y-3">
+            <h2 class="text-lg font-semibold text-slate-200">3. Local Merchant Ad Network</h2>
+            <div class="p-4 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 rounded-lg flex justify-between items-center">
+                <div>
+                    <span class="text-xs bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded">SPONSORED</span>
+                    <h3 class="font-bold text-slate-100 mt-1">Daily Deal Banner Promotion</h3>
+                    <p class="text-xs text-slate-400">Promote wholesale combos directly to nearby township drivers and buyers.</p>
+                </div>
+                <button class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-3 py-2 rounded font-medium">Create Ad</button>
+            </div>
+        </section>
+
     </div>
 
+    <!-- Interactive Logic -->
     <script>
-        function calculate() {
-            const salePrice = parseFloat(document.getElementById('salePrice').value) || 0;
-            const costPrice = parseFloat(document.getElementById('costPrice').value) || 0;
-            const distance = parseInt(document.getElementById('distance').value) || 1;
-            const isRedZone = document.getElementById('isRedZone').checked;
+        function calculateProfit() {
+            const wholesale = parseFloat(document.getElementById('wholesaleCost').value) || 0;
+            const selling = parseFloat(document.getElementById('sellingPrice').value) || 0;
+            const distance = parseFloat(document.getElementById('distance').value) || 0;
+            const isRedZone = document.getElementById('redZoneToggle').checked;
 
-            document.getElementById('distanceVal').innerText = distance + ' km';
-
-            // ETA Calculation: Base 5 mins dispatch + 3 mins per km + 3 mins if Red Zone
-            let etaMinutes = 5 + (distance * 3);
-            if (isRedZone) {
-                etaMinutes += 3; // Safety routing delay
+            // Delivery Fee: R25 base for <= 3km, +R5/km over 3km
+            let deliveryFee = 25;
+            if (distance > 3) {
+                deliveryFee += (distance - 3) * 5;
             }
 
-            document.getElementById('outEta').innerText = '~' + etaMinutes + ' mins';
-            document.getElementById('etaStatus').innerText = distance <= 3 ? 'Fast Pickup' : 'Standard Delivery';
-
-            // Driver Fee Logic: Base R25 minimum threshold, +R5/km past 3km
-            const baseDriverFee = 25;
-            const extraKm = Math.max(0, distance - 3);
-            let driverFee = baseDriverFee + (extraKm * 5);
-
-            // Red Zone Hazard Surcharge (+R15 flat driver compensation)
-            let hazardPay = 0;
+            // Hazard surcharge
             if (isRedZone) {
-                hazardPay = 15;
-                document.getElementById('hazardRow').classList.remove('hidden');
-                document.getElementById('safetyBadge').className = 'px-4 py-2 rounded-full text-xs font-bold tracking-wider uppercase bg-red-500/20 text-red-400 border border-red-500/30 red-zone-pulse';
-                document.getElementById('safetyBadge').innerText = 'Red Zone Active';
+                deliveryFee += 15;
+                document.getElementById('redZoneAlert').classList.remove('hidden');
             } else {
-                document.getElementById('hazardRow').classList.add('hidden');
-                document.getElementById('safetyBadge').className = 'px-4 py-2 rounded-full text-xs font-bold tracking-wider uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
-                document.getElementById('safetyBadge').innerText = 'Route Clear';
+                document.getElementById('redZoneAlert').classList.add('hidden');
             }
 
-            const totalDriverPayout = driverFee + hazardPay;
+            // Platform fee: 10% of selling price
+            const platformFee = selling * 0.10;
 
-            // Platform Commission (6% of gross order value)
-            const platformFee = salePrice * 0.06;
+            // Net Merchant Profit = Selling Price - Wholesale Cost - Platform Fee
+            const netProfit = selling - wholesale - platformFee;
 
-            // Net Merchant Profit
-            const netProfit = salePrice - costPrice - totalDriverPayout - platformFee;
-            const margin = salePrice > 0 ? ((netProfit / salePrice) * 100).toFixed(1) : 0;
+            // Update UI
+            document.getElementById('deliveryFeeDisplay').innerText = `R${deliveryFee.toFixed(2)}`;
+            document.getElementById('platformFeeDisplay').innerText = `R${platformFee.toFixed(2)}`;
+            document.getElementById('netProfitDisplay').innerText = `R${netProfit.toFixed(2)}`;
+        }
 
-            // UI Render
-            document.getElementById('outSale').innerText = 'R' + salePrice.toFixed(2);
-            document.getElementById('outCost').innerText = '-R' + costPrice.toFixed(2);
-            document.getElementById('outDriver').innerText = '-R' + driverFee.toFixed(2);
-            document.getElementById('outHazard').innerText = '-R' + hazardPay.toFixed(2);
-            document.getElementById('outFee').innerText = '-R' + platformFee.toFixed(2);
-            document.getElementById('outNetProfit').innerText = 'R' + netProfit.toFixed(2);
-            document.getElementById('outMargin').innerText = margin + '% Margin';
-
-            const netBox = document.getElementById('netBox');
-            if (netProfit < 0) {
-                netBox.className = 'p-4 rounded-xl bg-red-950 text-white space-y-1 transition-colors';
-                document.getElementById('outMargin').className = 'text-xs font-bold px-2 py-1 rounded bg-red-900 text-red-300';
+        function verifyPin() {
+            const pin = document.getElementById('pinInput').value;
+            const status = document.getElementById('pinStatus');
+            if (pin.length === 4 && /^\d+$/.test(pin)) {
+                status.innerText = "✅ PIN Verified! Escrow funds released to driver.";
+                status.className = "text-xs text-emerald-400 text-center font-medium";
             } else {
-                netBox.className = 'p-4 rounded-xl bg-slate-900 text-white space-y-1 transition-colors';
-                document.getElementById('outMargin').className = 'text-xs font-bold px-2 py-1 rounded bg-slate-800 text-emerald-400';
+                status.innerText = "❌ Invalid PIN. Must be a 4-digit number.";
+                status.className = "text-xs text-rose-400 text-center font-medium";
             }
         }
 
-        function applyPreset(sale, cost, dist) {
-            document.getElementById('salePrice').value = sale;
-            document.getElementById('costPrice').value = cost;
-            document.getElementById('distance').value = dist;
-            calculate();
-        }
-
-        // Initialize calculation on page load
-        calculate();
+        // Run initial calculation
+        calculateProfit();
     </script>
 </body>
 </html>
